@@ -1,5 +1,0 @@
--- CreateTable
-CREATE TABLE "BlockedEmail" (
-    "email" TEXT NOT NULL PRIMARY KEY,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
