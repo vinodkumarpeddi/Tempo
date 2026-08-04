@@ -116,7 +116,7 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
 
           <Card>
             <CardHeader className="flex-row items-center justify-between">
-              <CardTitle>Usage history</CardTitle>
+              <CardTitle>Daily peaks</CardTitle>
               <div className="flex gap-1">
                 {RANGES.map((r) => (
                   <Button

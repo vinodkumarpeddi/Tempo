@@ -59,7 +59,7 @@ export default function AppShell({
         <Link href="/dashboard" className="mb-6 flex items-center gap-2.5 px-2">
           <Logo className="size-8" />
           <span className="leading-tight">
-            <span className="block text-sm font-semibold tracking-tight">Brim</span>
+            <span className="block text-sm font-semibold tracking-tight">Tempo</span>
             <span className="text-sidebar-foreground/55 block text-[10px] font-medium tracking-wider uppercase">
               Claude usage
             </span>

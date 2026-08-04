@@ -253,7 +253,11 @@
 }
 
 /* Vercel-style neutral chrome: primary actions are near-black (white in dark);
-   color is reserved for data and status. Brand blue stays on the logo mark. */
+   color is reserved for data and status. Tempo violet carries the brand. */
+:root, .dark {
+  --sidebar-primary: oklch(0.53 0.21 288);
+  --sidebar-ring: oklch(0.53 0.21 288);
+}
 :root {
   --primary: oklch(0.205 0.006 285.885);
   --primary-foreground: oklch(0.985 0 0);

@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { monotonePath, movingAvg } from "@/lib/chartPath";
+import { useMemo, useState } from "react";
 
 export type HistoryPoint = {
   capturedAt: string;
@@ -10,190 +9,181 @@ export type HistoryPoint = {
 };
 
 const W = 720;
-const H = 230;
-const PAD = { top: 16, right: 16, bottom: 28, left: 40 };
+const H = 210;
+const PAD = { top: 18, right: 8, bottom: 26, left: 34 };
 
 const SERIES = [
-  { key: "fiveHourPct", label: "Session (5h)", color: "var(--chart-5)" },
-  { key: "sevenDayPct", label: "Weekly", color: "var(--chart-2)" },
-] as const;
+  { key: "session" as const, label: "Session peak", color: "var(--chart-6)" },
+  { key: "weekly" as const, label: "Weekly peak", color: "var(--chart-2)" },
+];
+
+type Day = { label: string; full: string; session: number; weekly: number };
 
 export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
 
-  const { xs, paths, areas, maxY } = useMemo(() => {
-    if (points.length === 0)
-      return { xs: [] as number[], paths: [] as string[], areas: [] as string[], maxY: 100 };
-    const t0 = new Date(points[0].capturedAt).getTime();
-    const t1 = new Date(points[points.length - 1].capturedAt).getTime();
-    const span = Math.max(1, t1 - t0);
-    const xs = points.map(
-      (p) =>
-        PAD.left +
-        ((new Date(p.capturedAt).getTime() - t0) / span) * (W - PAD.left - PAD.right),
-    );
-    // Auto-scale the axis to the data so low usage doesn't flatline at the
-    // bottom of a fixed 0-100 range.
-    const dataMax = Math.max(
-      ...points.map((p) => Math.max(p.fiveHourPct, p.sevenDayPct)),
-      1,
-    );
-    const maxY = Math.min(100, Math.max(25, Math.ceil((dataMax * 1.15) / 25) * 25));
-    const y = (pct: number) =>
-      PAD.top + (1 - Math.min(maxY, Math.max(0, pct)) / maxY) * (H - PAD.top - PAD.bottom);
-    const paths: string[] = [];
-    const areas: string[] = [];
-    for (const sdef of SERIES) {
-      const smooth = movingAvg(
-        points.map((p) => p[sdef.key]),
-        3,
-      );
-      const line = monotonePath(
-        xs,
-        smooth.map((v) => y(v)),
-      );
-      paths.push(line);
-      areas.push(`${line} L${xs[xs.length - 1].toFixed(1)},${H - PAD.bottom} L${xs[0].toFixed(1)},${H - PAD.bottom} Z`);
+  const days = useMemo<Day[]>(() => {
+    const map = new Map<string, Day>();
+    for (const p of points) {
+      const d = new Date(p.capturedAt);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.session = Math.max(existing.session, p.fiveHourPct);
+        existing.weekly = Math.max(existing.weekly, p.sevenDayPct);
+      } else {
+        map.set(key, {
+          label: d.toLocaleDateString(undefined, { day: "numeric", month: "short" }),
+          full: d.toLocaleDateString(undefined, {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          }),
+          session: p.fiveHourPct,
+          weekly: p.sevenDayPct,
+        });
+      }
     }
-    return { xs, paths, areas, maxY };
+    return [...map.values()];
   }, [points]);
 
-  if (points.length < 2) {
+  if (days.length === 0) {
     return (
-      <p className="text-sm py-8" style={{ color: "var(--muted-foreground)" }}>
+      <p className="text-muted-foreground py-8 text-sm">
         Not enough history yet — check back after a few reports.
       </p>
     );
   }
 
-  const yFor = (pct: number) =>
-    PAD.top + (1 - Math.min(maxY, Math.max(0, pct)) / maxY) * (H - PAD.top - PAD.bottom);
-  const ticks = [0, 25, 50, 75, 100].filter((t) => t <= maxY);
-
-  const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const px = ((e.clientX - rect.left) / rect.width) * W;
-    let best = 0;
-    for (let i = 1; i < xs.length; i++) if (Math.abs(xs[i] - px) < Math.abs(xs[best] - px)) best = i;
-    setHover(best);
-  };
-
-  const hovered = hover !== null ? points[hover] : null;
+  const dataMax = Math.max(...days.map((d) => Math.max(d.session, d.weekly)), 1);
+  const maxY = Math.min(100, Math.max(25, Math.ceil((dataMax * 1.2) / 25) * 25));
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+  const slot = plotW / days.length;
+  const barW = Math.min(22, Math.max(6, slot * 0.28));
+  const gap = Math.min(6, barW * 0.35);
+  const yFor = (v: number) => PAD.top + (1 - Math.min(maxY, v) / maxY) * plotH;
+  const ticks = maxY <= 50 ? [0, 25, 50].filter((t) => t <= maxY) : [0, 50, 100];
+  const showLabels = days.length <= 8;
+  const labelEvery = days.length > 16 ? Math.ceil(days.length / 8) : 1;
 
   return (
     <div>
-      <div className="flex gap-4 mb-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
+      <div className="text-muted-foreground mb-3 flex gap-4 text-xs">
         {SERIES.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5">
-            <span className="inline-block w-3 h-0.5 rounded" style={{ background: s.color }} />
+            <span className="inline-block size-2 rounded-[3px]" style={{ background: s.color }} />
             {s.label}
           </span>
         ))}
+        <span className="ms-auto">highest point reached each day</span>
       </div>
       <div className="relative">
         <svg
-          ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
-          className="w-full h-auto block"
-          onMouseMove={onMove}
+          className="block h-auto w-full"
           onMouseLeave={() => setHover(null)}
           role="img"
-          aria-label="Usage history: session and weekly utilization over time"
+          aria-label="Daily peak usage: session and weekly"
         >
-          {ticks.map((pct) => (
-            <g key={pct}>
+          {ticks.map((t) => (
+            <g key={t}>
               <line
                 x1={PAD.left}
                 x2={W - PAD.right}
-                y1={yFor(pct)}
-                y2={yFor(pct)}
-                stroke={pct === 0 ? "var(--input)" : "var(--border)"}
+                y1={yFor(t)}
+                y2={yFor(t)}
+                stroke={t === 0 ? "var(--input)" : "var(--border)"}
                 strokeWidth={1}
               />
               <text
-                x={PAD.left - 8}
-                y={yFor(pct) + 3}
+                x={PAD.left - 7}
+                y={yFor(t) + 3}
                 textAnchor="end"
                 fontSize={10}
                 fill="var(--muted-foreground)"
               >
-                {pct}%
+                {t}%
               </text>
             </g>
           ))}
-          {[0, Math.floor((points.length - 1) / 2), points.length - 1].map((i) => (
-            <text
-              key={i}
-              x={xs[i]}
-              y={H - 8}
-              textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"}
-              fontSize={10}
-              fill="var(--muted-foreground)"
-            >
-              {new Date(points[i].capturedAt).toLocaleString(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </text>
-          ))}
-          {SERIES.map((s, si) => (
-            <g key={s.key}>
-              <path d={areas[si]} fill={s.color} opacity={0.07} />
-              <path d={paths[si]} fill="none" stroke={s.color} strokeWidth={2} />
-            </g>
-          ))}
-          {hover !== null && (
-            <g>
-              <line
-                x1={xs[hover]}
-                x2={xs[hover]}
-                y1={PAD.top}
-                y2={H - PAD.bottom}
-                stroke="var(--input)"
-                strokeWidth={1}
-              />
-              {SERIES.map((s) => (
-                <circle
-                  key={s.key}
-                  cx={xs[hover]}
-                  cy={yFor(points[hover][s.key])}
-                  r={4}
-                  fill={s.color}
-                  stroke="var(--card)"
-                  strokeWidth={2}
+
+          {days.map((d, i) => {
+            const cx = PAD.left + slot * i + slot / 2;
+            const dim = hover !== null && hover !== i;
+            return (
+              <g
+                key={i}
+                opacity={dim ? 0.35 : 1}
+                onMouseEnter={() => setHover(i)}
+                style={{ transition: "opacity 0.12s ease" }}
+              >
+                <rect
+                  x={PAD.left + slot * i}
+                  y={PAD.top}
+                  width={slot}
+                  height={plotH}
+                  fill="transparent"
                 />
-              ))}
-            </g>
-          )}
+                {(
+                  [
+                    [d.session, SERIES[0].color, cx - barW - gap / 2],
+                    [d.weekly, SERIES[1].color, cx + gap / 2],
+                  ] as const
+                ).map(([v, color, x], bi) => (
+                  <g key={bi}>
+                    <rect
+                      x={x}
+                      y={yFor(v)}
+                      width={barW}
+                      height={Math.max(2, yFor(0) - yFor(v))}
+                      rx={3}
+                      fill={color}
+                    />
+                    {showLabels && v >= 1 && (
+                      <text
+                        x={x + barW / 2}
+                        y={yFor(v) - 5}
+                        textAnchor="middle"
+                        fontSize={9.5}
+                        fontWeight={600}
+                        fill="var(--muted-foreground)"
+                      >
+                        {v.toFixed(0)}
+                      </text>
+                    )}
+                  </g>
+                ))}
+                {i % labelEvery === 0 && (
+                  <text
+                    x={cx}
+                    y={H - 8}
+                    textAnchor="middle"
+                    fontSize={10}
+                    fill="var(--muted-foreground)"
+                  >
+                    {d.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </svg>
-        {hovered && hover !== null && (
+
+        {hover !== null && days[hover] && (
           <div
-            className="absolute pointer-events-none text-xs rounded-md border px-3 py-2 shadow-sm"
+            className="border-border bg-popover pointer-events-none absolute top-1 rounded-md border px-3 py-2 text-xs shadow-sm"
             style={{
-              left: `${(xs[hover] / W) * 100}%`,
-              top: 0,
-              transform: xs[hover] > W / 2 ? "translateX(calc(-100% - 8px))" : "translateX(8px)",
-              background: "var(--card)",
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
+              left: `${((PAD.left + slot * hover + slot / 2) / W) * 100}%`,
+              transform:
+                hover > days.length / 2 ? "translateX(calc(-100% - 10px))" : "translateX(10px)",
             }}
           >
-            <div style={{ color: "var(--muted-foreground)" }}>
-              {new Date(hovered.capturedAt).toLocaleString(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
+            <div className="text-muted-foreground mb-1">{days[hover].full}</div>
             {SERIES.map((s) => (
-              <div key={s.key} className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-block w-2 h-2 rounded-full" style={{ background: s.color }} />
-                {s.label}: <b className="tabular-nums">{hovered[s.key].toFixed(0)}%</b>
+              <div key={s.key} className="mt-0.5 flex items-center gap-1.5">
+                <span className="inline-block size-2 rounded-[3px]" style={{ background: s.color }} />
+                {s.label}: <b className="tabular-nums">{days[hover][s.key].toFixed(0)}%</b>
               </div>
             ))}
           </div>

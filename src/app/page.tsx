@@ -59,7 +59,7 @@ export default async function LandingPage() {
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
             <Logo className="size-7" />
-            <span className="text-sm font-semibold tracking-tight">Brim</span>
+            <span className="text-sm font-semibold tracking-tight">Tempo</span>
           </div>
           <nav className="flex items-center gap-2">
             <Link
@@ -85,7 +85,7 @@ export default async function LandingPage() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(600px 280px at 50% -40px, color-mix(in oklch, var(--color-brand-400) 14%, transparent), transparent)",
+                "radial-gradient(600px 280px at 50% -40px, color-mix(in oklch, #7048E8 13%, transparent), transparent)",
             }}
           />
           <div
@@ -105,7 +105,7 @@ export default async function LandingPage() {
             </div>
             <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tighter text-balance sm:text-6xl">
               Know your team&apos;s Claude limits{" "}
-              <span className="from-brand-500 to-brand-700 bg-gradient-to-r bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#8B6BF2] to-[#5F3DC4] bg-clip-text text-transparent">
                 before they hit them
               </span>
             </h1>
@@ -135,7 +135,7 @@ export default async function LandingPage() {
                 <span className="size-2.5 rounded-full bg-[#febc2e]" />
                 <span className="size-2.5 rounded-full bg-[#28c840]" />
                 <span className="text-sidebar-foreground/50 ms-3 text-[11px]">
-                  brim — dashboard
+                  tempo — dashboard
                 </span>
               </div>
               <div className="bg-background grid gap-3 rounded-b-xl p-4 text-start sm:grid-cols-3">
@@ -234,7 +234,7 @@ export default async function LandingPage() {
         <div className="text-muted-foreground mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 text-xs">
           <span className="flex items-center gap-2">
             <Logo className="size-5" rounded="rounded-md" />
-            Brim — Claude usage for teams
+            Tempo — Claude usage for teams
           </span>
           <span>Self-hosted · your data stays yours</span>
         </div>

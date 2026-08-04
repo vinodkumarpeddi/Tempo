@@ -105,7 +105,7 @@ export default function SetupPage() {
           <CopyBlock
             text={`# .env
 RESEND_API_KEY=re_xxx
-EMAIL_FROM="Brim <usage@yourdomain.com>"
+EMAIL_FROM="Tempo <usage@yourdomain.com>"
 APP_URL=https://your-server
 
 # crontab
