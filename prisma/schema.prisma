@@ -54,7 +54,10 @@ model Settings {
   id                 Int    @id @default(1)
   collectIntervalMin Int    @default(30)
   digestHourUtc      Int    @default(9) // legacy, superseded by digestHours
-  digestHours        String @default("9")  // comma-separated UTC hours
+  digestHours        String @default("9")  // legacy
+  digestTimes        String @default("09:00") // comma-separated HH:MM (UTC)
+  digestDays         String @default("0,1,2,3,4,5,6") // UTC weekdays, 0=Sun
+  digestSentLog      String @default("") // JSON array of sent slot keys (today)
   warnThreshold      Int    @default(80)
   criticalThreshold  Int    @default(95)
   adminEmail         String @default("")

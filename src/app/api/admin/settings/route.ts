@@ -9,24 +9,33 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ settings: await getSettings() });
 }
 
-const ALLOWED_INTERVALS = [15, 30, 60, 120];
-
 export async function PUT(req: NextRequest) {
   if (!(await isAuthed(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
 
   const data: Record<string, number | string | boolean> = {};
-  if (ALLOWED_INTERVALS.includes(body.collectIntervalMin))
-    data.collectIntervalMin = body.collectIntervalMin;
   if (
-    Array.isArray(body.digestHours) &&
-    body.digestHours.length >= 1 &&
-    body.digestHours.length <= 6 &&
-    body.digestHours.every((h: unknown) => Number.isInteger(h) && (h as number) >= 0 && (h as number) <= 23)
+    Number.isInteger(body.collectIntervalMin) &&
+    body.collectIntervalMin >= 10 &&
+    body.collectIntervalMin <= 720
+  )
+    data.collectIntervalMin = body.collectIntervalMin;
+  const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (
+    Array.isArray(body.digestTimes) &&
+    body.digestTimes.length >= 1 &&
+    body.digestTimes.length <= 12 &&
+    body.digestTimes.every((t: unknown) => typeof t === "string" && timeRe.test(t))
   ) {
-    data.digestHours = [...new Set(body.digestHours as number[])]
-      .sort((a, b) => a - b)
-      .join(",");
+    data.digestTimes = [...new Set(body.digestTimes as string[])].sort().join(",");
+  }
+  if (
+    Array.isArray(body.digestDays) &&
+    body.digestDays.length >= 1 &&
+    body.digestDays.length <= 7 &&
+    body.digestDays.every((d: unknown) => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6)
+  ) {
+    data.digestDays = [...new Set(body.digestDays as number[])].sort((a, b) => a - b).join(",");
   }
   if (Number.isInteger(body.warnThreshold) && body.warnThreshold > 0 && body.warnThreshold < 100)
     data.warnThreshold = body.warnThreshold;

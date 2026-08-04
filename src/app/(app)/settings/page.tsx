@@ -5,19 +5,14 @@ import { useRouter } from "next/navigation";
 import { Check, FileText, Plus, Send, Table2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import PageHeader from "@/components/PageHeader";
 import { cn } from "@/lib/cn";
 
 type AdminSettings = {
   collectIntervalMin: number;
-  digestHours: string;
+  digestTimes: string;
+  digestDays: string;
   warnThreshold: number;
   criticalThreshold: number;
   adminEmail: string;
@@ -33,6 +28,7 @@ const INTERVALS = [
   { value: 60, label: "1 hour" },
   { value: 120, label: "2 hours" },
 ];
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function Card({
   title,
@@ -118,21 +114,30 @@ export default function SettingsPage() {
     });
   }, [router]);
 
-  const hours = (settings?.digestHours ?? "")
+  const times = (settings?.digestTimes ?? "")
     .split(",")
-    .map((h) => parseInt(h, 10))
-    .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
-
-  const setHours = (next: number[]) =>
+    .filter((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t));
+  const setTimes = (next: string[]) =>
     settings &&
-    setSettings({ ...settings, digestHours: [...new Set(next)].sort((a, b) => a - b).join(",") });
+    setSettings({ ...settings, digestTimes: [...new Set(next)].sort().join(",") });
+
+  const days = (settings?.digestDays ?? "")
+    .split(",")
+    .map((d) => parseInt(d, 10))
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  const toggleDay = (d: number) => {
+    if (!settings) return;
+    const next = days.includes(d) ? days.filter((x) => x !== d) : [...days, d];
+    if (next.length === 0) return;
+    setSettings({ ...settings, digestDays: next.sort((a, b) => a - b).join(",") });
+  };
 
   const save = async () => {
     if (!settings) return;
     const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...settings, digestHours: hours }),
+      body: JSON.stringify({ ...settings, digestTimes: times, digestDays: days }),
     });
     setStatus(res.ok ? "Settings saved" : "Failed to save settings");
   };
@@ -175,11 +180,41 @@ export default function SettingsPage() {
             title="Collection"
             description="How often each member's machine reports usage. Applies everywhere automatically."
           >
-            <Segmented
-              options={INTERVALS}
-              value={settings.collectIntervalMin}
-              onChange={(v) => setSettings({ ...settings, collectIntervalMin: v })}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              <Segmented
+                options={[...INTERVALS, { value: -1, label: "Custom" }]}
+                value={
+                  INTERVALS.some((i) => i.value === settings.collectIntervalMin)
+                    ? settings.collectIntervalMin
+                    : -1
+                }
+                onChange={(v) =>
+                  setSettings({ ...settings, collectIntervalMin: v === -1 ? 45 : v })
+                }
+              />
+              {!INTERVALS.some((i) => i.value === settings.collectIntervalMin) && (
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={10}
+                    max={720}
+                    step={5}
+                    value={settings.collectIntervalMin}
+                    onChange={(e) =>
+                      setSettings({ ...settings, collectIntervalMin: Number(e.target.value) })
+                    }
+                    className="w-28 pe-10"
+                  />
+                  <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    min
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-muted-foreground -mt-3 text-xs">
+              Any value from 10 to 720 minutes — collectors tick every 10 minutes, so timing
+              rounds to the next tick.
+            </p>
           </Card>
 
           <Card
@@ -193,41 +228,63 @@ export default function SettingsPage() {
             }
             dimmed={!settings.digestEnabled}
           >
-            <Field label="Send at — as many times a day as you need (UTC)">
+            <Field label="Send at — exact times, as many as you need (UTC)">
               <div className="flex flex-wrap items-center gap-1.5">
-                {hours.map((h) => (
+                {times.map((t) => (
                   <span
-                    key={h}
+                    key={t}
                     className="border-border bg-secondary/60 inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] font-medium tabular-nums"
                   >
-                    {String(h).padStart(2, "0")}:00
+                    {t}
                     <button
-                      onClick={() => hours.length > 1 && setHours(hours.filter((x) => x !== h))}
-                      disabled={hours.length === 1}
-                      aria-label={`Remove ${h}:00`}
+                      onClick={() => times.length > 1 && setTimes(times.filter((x) => x !== t))}
+                      disabled={times.length === 1}
+                      aria-label={`Remove ${t}`}
                       className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                     >
                       <X className="size-3.5" />
                     </button>
                   </span>
                 ))}
-                {hours.length < 6 && (
-                  <Select value="" onValueChange={(v) => setHours([...hours, Number(v)])}>
-                    <SelectTrigger className="border-border text-muted-foreground hover:text-foreground h-[34px] w-auto gap-1 border-dashed px-2.5 text-[13px]">
-                      <Plus className="size-3.5" />
-                      Add time
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 24 }, (_, h) => h)
-                        .filter((h) => !hours.includes(h))
-                        .map((h) => (
-                          <SelectItem key={h} value={String(h)}>
-                            {String(h).padStart(2, "0")}:00 UTC
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                {times.length < 12 && (
+                  <span className="border-border inline-flex items-center gap-1 rounded-lg border border-dashed ps-2">
+                    <Plus className="text-muted-foreground size-3.5" />
+                    <input
+                      type="time"
+                      className="text-muted-foreground focus:text-foreground bg-transparent py-1.5 pe-2 text-[13px] outline-none"
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setTimes([...times, e.target.value]);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </span>
                 )}
+              </div>
+            </Field>
+
+            <Field label="On days">
+              <div className="flex items-center gap-1.5">
+                {DAY_LABELS.map((d, i) => (
+                  <button
+                    key={d}
+                    onClick={() => toggleDay(i)}
+                    className={cn(
+                      "size-9 rounded-lg border text-[12px] font-medium transition-colors",
+                      days.includes(i)
+                        ? "border-foreground/70 bg-foreground text-background"
+                        : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {d[0]}
+                  </button>
+                ))}
+                <span className="text-muted-foreground ms-2 text-xs">
+                  {days.length === 7
+                    ? "Every day"
+                    : days.map((d) => DAY_LABELS[d]).join(", ")}
+                </span>
               </div>
             </Field>
 

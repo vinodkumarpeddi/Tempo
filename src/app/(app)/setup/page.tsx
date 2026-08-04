@@ -109,7 +109,7 @@ EMAIL_FROM="Tempo <usage@yourdomain.com>"
 APP_URL=https://your-server
 
 # crontab
-0 * * * * curl -s "https://your-server/api/cron/daily?secret=$CRON_SECRET"`}
+*/5 * * * * curl -s "https://your-server/api/cron/daily?secret=$CRON_SECRET"`}
           />
         </div>
       </main>

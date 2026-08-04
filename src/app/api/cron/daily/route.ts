@@ -26,19 +26,34 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
+  const todayUtc = now.toISOString().slice(0, 10);
+  let dueSlot: string | null = null;
   if (!force) {
-    const hours = (settings.digestHours || String(settings.digestHourUtc))
+    const days = settings.digestDays
       .split(",")
-      .map((h) => parseInt(h, 10))
-      .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
-    if (!hours.includes(now.getUTCHours())) {
-      return NextResponse.json({ sent: false, reason: "not a configured report hour" });
+      .map((d) => parseInt(d, 10))
+      .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+    if (!days.includes(now.getUTCDay())) {
+      return NextResponse.json({ sent: false, reason: "not a configured report day" });
     }
-    // One send per configured hour: dedupe on the day+hour slot.
-    const last = settings.lastDigestAt;
-    if (last && last.toISOString().slice(0, 13) === now.toISOString().slice(0, 13)) {
-      return NextResponse.json({ sent: false, reason: "already sent this slot" });
+    const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+    const times = settings.digestTimes.split(",").filter((t) => timeRe.test(t));
+    const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    let sentToday: string[] = [];
+    try {
+      const log = JSON.parse(settings.digestSentLog || "[]") as string[];
+      sentToday = log.filter((k) => k.startsWith(todayUtc));
+    } catch {}
+    // A slot is due once its time has passed and it hasn't been sent today —
+    // so a briefly-down server still catches up on the next cron tick.
+    const due = times.find((t) => {
+      const [h, m] = t.split(":").map(Number);
+      return nowMinutes >= h * 60 + m && !sentToday.includes(`${todayUtc}#${t}`);
+    });
+    if (!due) {
+      return NextResponse.json({ sent: false, reason: "no report slot due" });
     }
+    dueSlot = `${todayUtc}#${due}`;
   }
 
   const users = await prisma.user.findMany({
@@ -124,9 +139,14 @@ export async function GET(req: NextRequest) {
   );
 
   if (sent) {
+    let log: string[] = [];
+    try {
+      log = JSON.parse(settings.digestSentLog || "[]") as string[];
+    } catch {}
+    const nextLog = [...log.filter((k) => k.startsWith(todayUtc)), ...(dueSlot ? [dueSlot] : [])];
     await prisma.settings.update({
       where: { id: 1 },
-      data: { lastDigestAt: now },
+      data: { lastDigestAt: now, digestSentLog: JSON.stringify(nextLog) },
     });
   }
 
