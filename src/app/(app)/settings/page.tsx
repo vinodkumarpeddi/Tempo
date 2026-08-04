@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import PageHeader from "@/components/PageHeader";
 
 type AdminSettings = {
   collectIntervalMin: number;
@@ -74,17 +75,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-6 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Collection cadence, report schedule and format, and alert thresholds
-          </p>
-        </div>
+    <>
+      <PageHeader
+        title="Settings"
+        description="Collection cadence, report schedule and format, and alert thresholds"
+      >
         {status && <p className="text-muted-foreground text-sm">{status}</p>}
-      </div>
-
+      </PageHeader>
+      <main className="mx-auto w-full max-w-4xl px-6 py-6">
       <Card>
         <CardHeader>
           <CardTitle>Collection</CardTitle>
@@ -225,6 +223,7 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-    </main>
+      </main>
+    </>
   );
 }

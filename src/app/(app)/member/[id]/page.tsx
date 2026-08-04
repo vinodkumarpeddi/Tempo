@@ -19,6 +19,7 @@ type HistoryResponse = {
     sevenDayResetsAt: string;
     capturedAt: string;
   } | null;
+  scoped: { label: string; pct: number; resetsAt: string }[];
   thresholds: { warn: number; critical: number };
 };
 
@@ -75,7 +76,9 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
           </div>
 
           {data.latest && (
-            <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            <div
+              className={`mb-4 grid gap-4 sm:grid-cols-2 ${data.scoped.length > 0 ? "lg:grid-cols-3" : ""}`}
+            >
               <div className="bg-card rounded-xl border p-5">
                 <Meter
                   label="Session · 5 hour"
@@ -94,6 +97,17 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
                   critical={data.thresholds.critical}
                 />
               </div>
+              {data.scoped.map((sc) => (
+                <div key={sc.label} className="bg-card rounded-xl border p-5">
+                  <Meter
+                    label={`Weekly · ${sc.label}`}
+                    pct={sc.pct}
+                    resetsAt={sc.resetsAt}
+                    warn={data.thresholds.warn}
+                    critical={data.thresholds.critical}
+                  />
+                </div>
+              ))}
             </div>
           )}
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CopyBlock from "@/components/CopyBlock";
+import PageHeader from "@/components/PageHeader";
 
 function Step({
   n,
@@ -32,13 +33,9 @@ function Step({
 
 export default function SetupPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Setup guide</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          From zero to a fully reporting team in about ten minutes.
-        </p>
-      </div>
+    <>
+      <PageHeader title="Setup guide" description="From zero to a fully reporting team in about ten minutes"></PageHeader>
+      <main className="mx-auto w-full max-w-3xl px-6 py-6">
 
       <Card className="mb-8">
         <CardHeader>
@@ -144,6 +141,7 @@ APP_URL=https://your-server`}
           </p>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

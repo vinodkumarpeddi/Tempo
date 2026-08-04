@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import PageHeader from "@/components/PageHeader";
 import {
   Table,
   TableBody,
@@ -53,13 +54,9 @@ export default function AlertsPage() {
   }, [router]);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Alerts</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Every threshold warning and reset notice that has been sent
-        </p>
-      </div>
+    <>
+      <PageHeader title="Alerts" description="Every threshold warning and reset notice that has been sent"></PageHeader>
+      <main className="mx-auto w-full max-w-5xl px-6 py-6">
 
       {alerts && alerts.length === 0 && (
         <EmptyState
@@ -114,6 +111,7 @@ export default function AlertsPage() {
           </CardContent>
         </Card>
       )}
-    </main>
+      </main>
+    </>
   );
 }

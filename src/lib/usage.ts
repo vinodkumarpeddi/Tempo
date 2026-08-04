@@ -11,7 +11,34 @@ type LimitShape = {
   group?: string;
   percent?: number;
   resets_at?: string;
+  scope?: { model?: { display_name?: string | null } | null } | null;
 };
+
+export type ScopedLimit = { label: string; pct: number; resetsAt: string };
+
+// Model-scoped weekly limits (e.g. a separate Fable/Opus cap) live only in the
+// `limits` array of the raw payload; surface them from the stored raw JSON.
+export function scopedLimits(rawJson: string): ScopedLimit[] {
+  try {
+    const raw = JSON.parse(rawJson) as { limits?: LimitShape[] };
+    if (!Array.isArray(raw.limits)) return [];
+    return raw.limits
+      .filter(
+        (l) =>
+          l?.kind === "weekly_scoped" &&
+          typeof l.percent === "number" &&
+          typeof l.resets_at === "string" &&
+          l.scope?.model?.display_name,
+      )
+      .map((l) => ({
+        label: l.scope!.model!.display_name as string,
+        pct: l.percent as number,
+        resetsAt: l.resets_at as string,
+      }));
+  } catch {
+    return [];
+  }
+}
 
 // Tolerant parser for the (undocumented) /api/oauth/usage response.
 // Prefers the top-level five_hour/seven_day objects, falls back to the

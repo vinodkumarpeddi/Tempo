@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { monotonePath, movingAvg } from "@/lib/chartPath";
 
 export type TrendSeries = { name: string; values: number[]; at: string[] };
 
@@ -32,13 +33,13 @@ export default function TeamTrendChart({ series }: { series: TrendSeries[] }) {
 
   const paths = useMemo(
     () =>
-      shown.map((s) =>
-        s.values
-          .map(
-            (v, i) => `${i === 0 ? "M" : "L"}${xFor(i, s.values.length).toFixed(1)},${yFor(v).toFixed(1)}`,
-          )
-          .join(" "),
-      ),
+      shown.map((s) => {
+        const smooth = movingAvg(s.values, 3);
+        return monotonePath(
+          smooth.map((_, i) => xFor(i, smooth.length)),
+          smooth.map((v) => yFor(v)),
+        );
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [series],
   );

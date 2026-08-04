@@ -37,6 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Meter, { fmtCountdown, fmtResetDate, statusOf } from "@/components/Meter";
+import PageHeader from "@/components/PageHeader";
 import Sparkline from "@/components/Sparkline";
 import TeamTrendChart from "@/components/TeamTrendChart";
 
@@ -54,6 +55,7 @@ type Member = {
   } | null;
   spark: number[];
   sparkAt: string[];
+  scoped: { label: string; pct: number; resetsAt: string }[];
 };
 
 type TeamResponse = {
@@ -72,6 +74,51 @@ const HEADROOM_CHIP = {
   critical:
     "bg-[color-mix(in_oklch,var(--color-rose-500)_12%,transparent)] text-[var(--color-rose-700)] dark:text-[var(--color-rose-400)]",
 };
+
+const SCOPED_FILL = {
+  good: "var(--color-emerald-500)",
+  warning: "var(--color-amber-500)",
+  critical: "var(--color-rose-500)",
+};
+
+function ScopedRow({
+  scoped,
+  warn,
+  critical,
+}: {
+  scoped: { label: string; pct: number; resetsAt: string }[];
+  warn: number;
+  critical: number;
+}) {
+  if (scoped.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      {scoped.map((sc) => (
+        <div
+          key={sc.label}
+          className="flex items-center gap-2"
+          title={`${sc.label} weekly · resets ${fmtResetDate(sc.resetsAt)}`}
+        >
+          <span className="text-muted-foreground w-14 shrink-0 truncate text-[11px]">
+            {sc.label}
+          </span>
+          <div className="bg-secondary h-1.5 flex-1 overflow-hidden rounded-full">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(100, Math.max(0, sc.pct))}%`,
+                background: SCOPED_FILL[statusOf(sc.pct, warn, critical)],
+              }}
+            />
+          </div>
+          <span className="w-9 shrink-0 text-right text-[11px] font-semibold tabular-nums">
+            {sc.pct.toFixed(0)}%
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function StatTile({
   icon,
@@ -235,14 +282,11 @@ export default function TeamPage() {
   );
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Team capacity</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Who has Claude allowance left — session and weekly limits with reset dates
-          </p>
-        </div>
+    <>
+      <PageHeader
+        title="Team capacity"
+        description="Who has Claude allowance left — session and weekly limits with reset dates"
+      >
         {updatedAt && (
           <p className="text-muted-foreground text-xs">
             Updated{" "}
@@ -250,8 +294,8 @@ export default function TeamPage() {
             refreshes every minute
           </p>
         )}
-      </div>
-
+      </PageHeader>
+      <main className="mx-auto w-full max-w-6xl px-6 py-6">
       {error && <p className="text-sm">Failed to load team data.</p>}
 
       {data && stats && data.members.length > 0 && (
@@ -314,7 +358,13 @@ export default function TeamPage() {
             </CardContent>
           </Card>
 
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div
+            className={
+              view === "table"
+                ? "bg-card flex flex-wrap items-center gap-2 rounded-t-xl border border-b-0 px-4 py-3"
+                : "mb-4 flex flex-wrap items-center gap-2"
+            }
+          >
             <div className="relative">
               <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
               <Input
@@ -361,7 +411,7 @@ export default function TeamPage() {
           </div>
 
           {view === "table" ? (
-            <div className="bg-card overflow-x-auto rounded-xl border">
+            <div className="bg-card overflow-x-auto rounded-b-xl border">
               <Table>
                 <TableHeader>
                   <TableRow className="text-xs">
@@ -418,6 +468,18 @@ export default function TeamPage() {
                                 critical={data.thresholds.critical}
                                 compact
                               />
+                              {m.scoped.length > 0 && (
+                                <div
+                                  className="text-muted-foreground mt-1 text-[10px]"
+                                  title={m.scoped
+                                    .map((sc) => `${sc.label} resets ${fmtResetDate(sc.resetsAt)}`)
+                                    .join(" · ")}
+                                >
+                                  {m.scoped
+                                    .map((sc) => `${sc.label} ${sc.pct.toFixed(0)}%`)
+                                    .join(" · ")}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell>
                               <span
@@ -515,6 +577,18 @@ export default function TeamPage() {
                           warn={data.thresholds.warn}
                           critical={data.thresholds.critical}
                         />
+                        {m.scoped.length > 0 && (
+                          <div className="border-border/70 border-t pt-3">
+                            <div className="text-muted-foreground/80 mb-1.5 text-[10px] font-medium tracking-wider uppercase">
+                              Model limits
+                            </div>
+                            <ScopedRow
+                              scoped={m.scoped}
+                              warn={data.thresholds.warn}
+                              critical={data.thresholds.critical}
+                            />
+                          </div>
+                        )}
                         {m.spark.length > 1 && (
                           <div className="border-border/70 border-t pt-3">
                             <div className="text-muted-foreground/80 mb-1 text-[10px] font-medium tracking-wider uppercase">
@@ -543,6 +617,7 @@ export default function TeamPage() {
           }
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }

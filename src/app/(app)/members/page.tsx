@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import PageHeader from "@/components/PageHeader";
 import {
   Table,
   TableBody,
@@ -79,16 +80,9 @@ export default function MembersPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Everyone whose Claude usage is tracked in this workspace
-          </p>
-        </div>
-        {status && <p className="text-muted-foreground text-sm">{status}</p>}
-      </div>
+    <>
+      <PageHeader title="Members" description="Everyone whose Claude usage is tracked in this workspace">{status && <p className="text-muted-foreground text-sm">{status}</p>}</PageHeader>
+      <main className="mx-auto w-full max-w-5xl px-6 py-6">
 
       <Card className="overflow-hidden pb-0">
         <CardHeader>
@@ -194,6 +188,7 @@ export default function MembersPage() {
           </Table>
         </CardContent>
       </Card>
-    </main>
+      </main>
+    </>
   );
 }

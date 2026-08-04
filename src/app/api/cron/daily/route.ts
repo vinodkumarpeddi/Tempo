@@ -16,6 +16,11 @@ export async function GET(req: NextRequest) {
   const force = req.nextUrl.searchParams.get("force") === "1";
 
   const settings = await getSettings();
+
+  // Housekeeping on every cron tick: usage history older than 90 days is noise.
+  await prisma.snapshot.deleteMany({
+    where: { capturedAt: { lt: new Date(Date.now() - 90 * 86_400_000) } },
+  });
   if (!settings.digestEnabled && !force) {
     return NextResponse.json({ sent: false, reason: "digest disabled" });
   }
@@ -72,6 +77,17 @@ export async function GET(req: NextRequest) {
     body = `<p>Today's team usage report is attached as a PDF.</p>`;
   } else {
     body = inlineTable(users, settings);
+  }
+
+  const staleMs = Math.max(2 * settings.collectIntervalMin, 60) * 60_000;
+  const staleMembers = users.filter((u) => {
+    const s = u.snapshots[0];
+    return !s || now.getTime() - s.capturedAt.getTime() > staleMs;
+  });
+  if (staleMembers.length > 0) {
+    body += `<p style="margin-top:16px;padding:10px 14px;background:#fef3c7;border-radius:8px;color:#92400e;">
+      <b>Not reporting:</b> ${staleMembers.map((u) => u.name).join(", ")} —
+      no recent data from these machines (collector off or laptop asleep).</p>`;
   }
 
   const html = emailShell(`Claude usage — daily report`, body);

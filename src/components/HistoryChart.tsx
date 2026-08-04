@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { monotonePath, movingAvg } from "@/lib/chartPath";
 
 export type HistoryPoint = {
   capturedAt: string;
@@ -33,11 +34,16 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
     );
     const y = (pct: number) =>
       PAD.top + (1 - Math.min(100, Math.max(0, pct)) / 100) * (H - PAD.top - PAD.bottom);
-    const paths = SERIES.map((s) =>
-      points
-        .map((p, i) => `${i === 0 ? "M" : "L"}${xs[i].toFixed(1)},${y(p[s.key]).toFixed(1)}`)
-        .join(" "),
-    );
+    const paths = SERIES.map((s) => {
+      const smooth = movingAvg(
+        points.map((p) => p[s.key]),
+        3,
+      );
+      return monotonePath(
+        xs,
+        smooth.map((v) => y(v)),
+      );
+    });
     return { xs, paths };
   }, [points]);
 
