@@ -6,13 +6,21 @@ import { resolveCollectorUser } from "@/lib/auth";
 // whether a report is due. The admin-configured interval therefore takes
 // effect on every machine without reinstalling anything.
 export async function GET(req: NextRequest) {
-  const { user, teamAuthed } = await resolveCollectorUser(req, { autoCreate: false });
+  const { user, teamAuthed, blocked } = await resolveCollectorUser(req, { autoCreate: false });
 
   if (!user && !teamAuthed) {
     return NextResponse.json({ error: "invalid ingest key" }, { status: 401 });
   }
 
   const settings = await getSettings();
+
+  // Removed members stay removed — their machine keeps ticking harmlessly.
+  if (blocked) {
+    return NextResponse.json({
+      intervalMinutes: settings.collectIntervalMin,
+      reportDue: false,
+    });
+  }
 
   // Team key with a member the server hasn't seen yet: report now — the
   // first ingest auto-creates them.

@@ -28,7 +28,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!(await isAuthed(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   try {
-    await prisma.user.delete({ where: { id } });
+    const user = await prisma.user.delete({ where: { id } });
+    // Tombstone the email so the team-key collector on their machine can't
+    // silently re-create them; re-adding the member lifts it.
+    await prisma.blockedEmail.upsert({
+      where: { email: user.email },
+      update: {},
+      create: { email: user.email },
+    });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "not found" }, { status: 404 });

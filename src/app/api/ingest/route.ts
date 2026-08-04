@@ -5,7 +5,13 @@ import { parseUsage } from "@/lib/usage";
 import { evaluateAlerts } from "@/lib/alerts";
 
 export async function POST(req: NextRequest) {
-  const { user, teamAuthed } = await resolveCollectorUser(req, { autoCreate: true });
+  const { user, teamAuthed, blocked } = await resolveCollectorUser(req, { autoCreate: true });
+  if (blocked) {
+    return NextResponse.json(
+      { error: "member was removed by the admin" },
+      { status: 403 },
+    );
+  }
   if (!user) {
     return NextResponse.json(
       { error: teamAuthed ? "member email required" : "invalid ingest key" },

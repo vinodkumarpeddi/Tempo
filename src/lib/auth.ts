@@ -25,29 +25,34 @@ export async function userFromIngestKey(req: NextRequest) {
  */
 export async function resolveCollectorUser(req: NextRequest, opts: { autoCreate: boolean }) {
   const key = bearerToken(req);
-  if (!key) return { user: null, teamAuthed: false };
+  if (!key) return { user: null, teamAuthed: false, blocked: false };
 
   const direct = await prisma.user.findUnique({ where: { ingestKey: key } });
-  if (direct) return { user: direct, teamAuthed: false };
+  if (direct) return { user: direct, teamAuthed: false, blocked: false };
 
   const { getSettings } = await import("./db");
   const settings = await getSettings();
   if (!settings.teamKey || key !== settings.teamKey) {
-    return { user: null, teamAuthed: false };
+    return { user: null, teamAuthed: false, blocked: false };
   }
 
   const email = (req.headers.get("x-member-email") ?? "").trim().toLowerCase();
-  if (!email || !email.includes("@")) return { user: null, teamAuthed: true };
+  if (!email || !email.includes("@")) return { user: null, teamAuthed: true, blocked: false };
 
   let user = await prisma.user.findUnique({ where: { email } });
-  if (!user && opts.autoCreate) {
-    const rawName = (req.headers.get("x-member-name") ?? "").trim();
-    const name = rawName || email.split("@")[0];
-    user = await prisma.user.create({
-      data: { name, email, ingestKey: newIngestKey() },
-    });
+  if (!user) {
+    // Removed members must not silently resurrect via the team key.
+    const blocked = await prisma.blockedEmail.findUnique({ where: { email } });
+    if (blocked) return { user: null, teamAuthed: true, blocked: true };
+    if (opts.autoCreate) {
+      const rawName = (req.headers.get("x-member-name") ?? "").trim();
+      const name = rawName || email.split("@")[0];
+      user = await prisma.user.create({
+        data: { name, email, ingestKey: newIngestKey() },
+      });
+    }
   }
-  return { user, teamAuthed: true };
+  return { user, teamAuthed: true, blocked: false };
 }
 
 export function isAdmin(req: NextRequest) {

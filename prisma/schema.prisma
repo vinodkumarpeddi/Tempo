@@ -75,3 +75,8 @@ model AlertLog {
 
   @@unique([userId, kind, dedupeKey])
 }
+
+model BlockedEmail {
+  email     String   @id
+  createdAt DateTime @default(now())
+}

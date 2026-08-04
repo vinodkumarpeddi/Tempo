@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "name and email required" }, { status: 400 });
   }
   try {
+    // Re-adding a previously removed member lifts the tombstone.
+    await prisma.blockedEmail.deleteMany({ where: { email } });
     const user = await prisma.user.create({
       data: { name, email, ingestKey: newIngestKey() },
     });
