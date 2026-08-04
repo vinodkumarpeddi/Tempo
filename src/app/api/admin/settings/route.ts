@@ -27,6 +27,8 @@ export async function PUT(req: NextRequest) {
   if (typeof body.adminEmail === "string") data.adminEmail = body.adminEmail.trim();
   if (body.digestFormat === "inline" || body.digestFormat === "pdf")
     data.digestFormat = body.digestFormat;
+  if (body.digestAudience === "all" || body.digestAudience === "admin")
+    data.digestAudience = body.digestAudience;
   if (typeof body.digestEnabled === "boolean") data.digestEnabled = body.digestEnabled;
   if (typeof body.alertsEnabled === "boolean") data.alertsEnabled = body.alertsEnabled;
 

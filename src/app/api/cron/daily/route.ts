@@ -92,12 +92,24 @@ export async function GET(req: NextRequest) {
 
   const html = emailShell(`Claude usage — daily report`, body);
 
-  const recipients = [
-    ...new Set([
-      ...users.map((u) => u.email),
-      ...(settings.adminEmail ? [settings.adminEmail] : []),
-    ]),
-  ];
+  const recipients =
+    settings.digestAudience === "admin"
+      ? settings.adminEmail
+        ? [settings.adminEmail]
+        : []
+      : [
+          ...new Set([
+            ...users.map((u) => u.email),
+            ...(settings.adminEmail ? [settings.adminEmail] : []),
+          ]),
+        ];
+
+  if (recipients.length === 0) {
+    return NextResponse.json({
+      sent: false,
+      reason: "audience is admin-only but no admin email is set",
+    });
+  }
 
   const sent = await sendEmail(
     recipients,

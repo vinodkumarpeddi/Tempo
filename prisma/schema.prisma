@@ -60,6 +60,7 @@ model Settings {
   digestEnabled      Boolean @default(true)
   alertsEnabled      Boolean @default(true)
   digestFormat       String  @default("inline") // "inline" | "pdf"
+  digestAudience     String  @default("all")    // "all" | "admin"
   lastDigestAt       DateTime?
 }
 

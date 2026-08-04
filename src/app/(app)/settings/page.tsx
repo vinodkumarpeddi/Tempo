@@ -27,6 +27,7 @@ type AdminSettings = {
   digestEnabled: boolean;
   alertsEnabled: boolean;
   digestFormat: "inline" | "pdf";
+  digestAudience: "all" | "admin";
 };
 
 const INTERVALS = [15, 30, 60, 120];
@@ -157,6 +158,27 @@ export default function SettingsPage() {
                   <SelectItem value="pdf">PDF attachment</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Send report to</Label>
+              <Select
+                value={settings.digestAudience}
+                onValueChange={(v) =>
+                  setSettings({ ...settings, digestAudience: v as "all" | "admin" })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin only</SelectItem>
+                  <SelectItem value="all">All members + admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                Threshold and reset alerts still go to the affected member either way.
+              </p>
             </div>
 
             <div className="space-y-1.5">
