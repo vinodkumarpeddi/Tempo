@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  ingestKey String     @unique
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  snapshots Snapshot[]
+  alerts    AlertLog[]
+}
+
+model Snapshot {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fiveHourPct       Float
+  fiveHourResetsAt  DateTime
+  sevenDayPct       Float
+  sevenDayResetsAt  DateTime
+  raw               String
+  capturedAt        DateTime @default(now())
+
+  @@index([userId, capturedAt])
+}
+
+model Settings {
+  id                 Int    @id @default(1)
+  collectIntervalMin Int    @default(30)
+  digestHourUtc      Int    @default(9)
+  warnThreshold      Int    @default(80)
+  criticalThreshold  Int    @default(95)
+  adminEmail         String @default("")
+  digestEnabled      Boolean @default(true)
+  alertsEnabled      Boolean @default(true)
+  digestFormat       String  @default("inline") // "inline" | "pdf"
+  lastDigestAt       DateTime?
+}
+
+model AlertLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  dedupeKey String
+  sentAt    DateTime @default(now())
+
+  @@unique([userId, kind, dedupeKey])
+}

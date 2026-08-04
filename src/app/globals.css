@@ -1,26 +1,253 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * @everhr/ui design tokens — the single source of truth for color, radius, and
+ * typography. Imported by the app's Tailwind entry (which owns `@import
+ * 'tailwindcss'`). Tokens are CSS custom properties in OKLCH; never hardcode
+ * hex/rgb in components — reference these via Tailwind utilities (bg-primary,
+ * text-muted-foreground, …). ~15 semantic roles max; one token = one role.
+ */
+
+/* Use a .dark class (toggled by ThemeProvider) instead of prefers-color-scheme,
+   so the OS setting never leaks dark styles into the light theme. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.5677 0.17 251.31);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  /* Outcome roles. Hues come from the existing chart scale — success from
+     chart-4 (149.579), warning from chart-3 (86.047) — so state color stays
+     inside the palette instead of introducing a second green/amber.
+     Unlike --destructive these are theme-AWARE: lightness is tuned per surface
+     so every pairing clears WCAG AA 4.5:1 as text AND as a fill with its
+     foreground. In light mode warning is necessarily a deep gold — bright amber
+     on white tops out at 1.9:1, so it may only appear as a fill or tint there.
+     Success sits deliberately darker than the 4.5:1 minimum: tuned to the same
+     ratio the two roles landed on near-identical luminance and became
+     indistinguishable in greyscale (and to red-green color blindness), so they
+     are held apart by lightness as well as hue. */
+  --success: oklch(0.48 0.145 149.579);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.55 0.14 86.047);
+  --warning-foreground: oklch(0.985 0 0);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.7132 0.15 243.4);
+  --chart-1: oklch(0.637 0.237 25.331);
+  --chart-2: oklch(0.72 0.16 47.604);
+  --chart-3: oklch(0.795 0.184 86.047);
+  --chart-4: oklch(0.627 0.15 149.579);
+  --chart-5: oklch(0.63 0.16 259.815);
+  --chart-6: oklch(0.606 0.25 292.717);
+  --radius: 0.625rem;
+
+  /* Frame: sidebar + topbar render dark (a slate) even in light mode, with the
+     content as a light inset card. The active-nav accent is a brightened brand
+     blue so it reads on the dark slate. */
+  --sidebar: oklch(0.251 0.015 285.3);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.7132 0.15 243.4);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.293 0.018 285.2);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.326 0.021 285.2);
+  --sidebar-ring: oklch(0.7132 0.15 243.4);
+
+  /* Pin native UI (scrollbars, form controls) to the app theme — without this
+     the index.html meta lets OS dark mode paint black scrollbars on light panels. */
+  color-scheme: light;
 }
 
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.5677 0.17 251.31);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.735 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  /* Lifted on dark surfaces, with a near-black foreground — the mirror of the
+     light-mode pairing. Here warning can be the full chart-3 amber. */
+  --success: oklch(0.65 0.145 149.579);
+  --success-foreground: oklch(0.216 0.006 285.885);
+  --warning: oklch(0.795 0.184 86.047);
+  --warning-foreground: oklch(0.216 0.006 285.885);
+  --border: oklch(0.245 0.006 286);
+  --input: oklch(0.42 0.014 285.805);
+  --ring: oklch(0.62 0.16 250.16);
+  --chart-1: oklch(0.637 0.237 25.331);
+  --chart-2: oklch(0.72 0.16 47.604);
+  --chart-3: oklch(0.795 0.184 86.047);
+  --chart-4: oklch(0.627 0.15 149.579);
+  --chart-5: oklch(0.63 0.16 259.815);
+  --chart-6: oklch(0.606 0.25 292.717);
+
+  --sidebar: oklch(0.251 0.015 285.3);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.7132 0.15 243.4);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.293 0.018 285.2);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.326 0.021 285.2);
+  --sidebar-ring: oklch(0.7132 0.15 243.4);
+}
+
+/* Expose the raw tokens above as Tailwind utility colors. Anything not mapped
+   here intentionally does not exist as a utility. */
 @theme inline {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Lochmara — EverHR brand scale (theme-agnostic). --color-brand aliases 500,
+     while --primary is the 600 step. */
+  --color-brand-50: oklch(97.51% 0.01 244.22);
+  --color-brand-100: oklch(94.54% 0.03 248.09);
+  --color-brand-200: oklch(88.87% 0.06 241.41);
+  --color-brand-300: oklch(80.13% 0.11 241.16);
+  --color-brand-400: oklch(71.32% 0.15 243.4);
+  --color-brand-500: oklch(63.97% 0.17 247.5);
+  --color-brand-600: oklch(56.77% 0.17 251.31);
+  --color-brand-700: oklch(46.48% 0.14 251.85);
+  --color-brand-800: oklch(41.36% 0.11 250.16);
+  --color-brand-900: oklch(36.82% 0.1 249.86);
+  --color-brand-950: oklch(27.72% 0.07 251.61);
+  --color-brand: var(--color-brand-500);
+
+  /* Status tones — theme-agnostic ramps, not semantic roles. A surface picks
+     the step it needs: fill at 500@10%, hairline at 500@30%, ink at 700 in
+     light and 400 in dark. Mapping is locked app-wide — emerald=approved,
+     amber=pending, rose=rejected, sky=informational — so a screen never
+     invents its own. Values are the Tailwind palette these components already
+     resolve at build time, promoted to real variables so mobile can generate
+     from them instead of hardcoding hexes in Dart. */
+  --color-emerald-400: oklch(0.7688 0.1687 161.949);
+  --color-emerald-500: oklch(0.7019 0.1577 160.438);
+  --color-emerald-600: oklch(0.6031 0.1344 160.923);
+  --color-emerald-700: oklch(0.5128 0.1100 163.565);
+  --color-amber-400: oklch(0.8290 0.1712 81.038);
+  --color-amber-500: oklch(0.7724 0.1728 65.367);
+  --color-amber-600: oklch(0.6671 0.1685 53.381);
+  --color-amber-700: oklch(0.5570 0.1583 45.359);
+  --color-rose-400: oklch(0.7057 0.1900 12.979);
+  --color-rose-500: oklch(0.6435 0.2452 16.501);
+  --color-rose-600: oklch(0.5968 0.2396 19.695);
+  --color-rose-700: oklch(0.5254 0.2107 18.944);
+  --color-sky-400: oklch(0.7484 0.1551 233.252);
+  --color-sky-500: oklch(0.6920 0.1595 240.379);
+  --color-sky-600: oklch(0.5933 0.1505 245.368);
+  --color-sky-700: oklch(0.4985 0.1174 241.579);
+  --color-violet-400: oklch(0.6989 0.1760 294.115);
+  --color-violet-500: oklch(0.6006 0.2425 293.888);
+  --color-violet-600: oklch(0.5405 0.2811 292.852);
+  --color-violet-700: oklch(0.4907 0.2699 292.563);
+  --color-indigo-400: oklch(0.6696 0.1767 276.949);
+  --color-indigo-500: oklch(0.5834 0.2305 277.068);
+  --color-indigo-600: oklch(0.5102 0.2618 276.936);
+  --color-indigo-700: oklch(0.4562 0.2396 276.932);
+  --color-fuchsia-400: oklch(0.7393 0.2353 322.642);
+  --color-fuchsia-500: oklch(0.6664 0.2950 322.080);
+  --color-fuchsia-600: oklch(0.5985 0.2831 322.758);
+  --color-fuchsia-700: oklch(0.5232 0.2461 323.825);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Finance amounts + IDs — tabular figures align in columns. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Markdown document typography ─────────────────────────────────────────────
+   Shared by <MarkdownView> (read-only, Markdown→HTML) and the <MarkdownEditor>
+   contenteditable surface, so what you edit matches what is displayed. Covers the
+   full GitHub-Flavored Markdown feature set the editor supports (headings, lists,
+   task lists, tables, code, images, quotes, rules). Colors reference the OKLCH
+   tokens above, so the block is theme-aware without any dark-mode overrides. */
+
+/* App overrides — use the Next-loaded Geist fonts instead of Inter. */
+:root {
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
 }
