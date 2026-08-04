@@ -63,6 +63,7 @@ model Settings {
   digestFormat       String  @default("inline") // "inline" | "pdf"
   digestAudience     String  @default("all")    // "all" | "admin"
   teamKey            String  @default("")
+  joinCode           String  @default("")
   lastDigestAt       DateTime?
 }
 

@@ -13,11 +13,11 @@ export async function getSettings() {
     update: {},
     create: { id: 1 },
   });
-  if (!settings.teamKey) {
-    return prisma.settings.update({
-      where: { id: 1 },
-      data: { teamKey: "ctu_team_" + randomBytes(24).toString("hex") },
-    });
+  const data: { teamKey?: string; joinCode?: string } = {};
+  if (!settings.teamKey) data.teamKey = "ctu_team_" + randomBytes(24).toString("hex");
+  if (!settings.joinCode) data.joinCode = randomBytes(6).toString("base64url");
+  if (Object.keys(data).length > 0) {
+    return prisma.settings.update({ where: { id: 1 }, data });
   }
   return settings;
 }

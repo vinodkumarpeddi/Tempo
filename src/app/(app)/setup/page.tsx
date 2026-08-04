@@ -34,17 +34,17 @@ function Step({
 }
 
 export default function SetupPage() {
-  const [teamKey, setTeamKey] = useState("");
+  const [joinCode, setJoinCode] = useState("");
   const [origin, setOrigin] = useState("https://your-server");
 
   useEffect(() => {
     setOrigin(window.location.origin);
     fetch("/api/admin/settings").then(async (res) => {
-      if (res.ok) setTeamKey((await res.json()).settings.teamKey ?? "");
+      if (res.ok) setJoinCode((await res.json()).settings.joinCode ?? "");
     });
   }, []);
 
-  const teamCmd = `curl -sSL ${origin}/install.sh | bash -s -- ${origin} ${teamKey || "<team-key>"}`;
+  const teamCmd = `curl -sSL ${origin}/j/${joinCode || "<code>"} | bash`;
 
   return (
     <>
