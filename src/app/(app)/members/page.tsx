@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Copy, KeyRound, MoreHorizontal, Power, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ type AdminUser = {
 export default function MembersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [status, setStatus] = useState("");
+  const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
@@ -49,33 +50,47 @@ export default function MembersPage() {
   }, [load]);
 
   const addUser = async () => {
+    if (adding) return;
+    setAdding(true);
     const res = await fetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newName, email: newEmail }),
     });
+    setAdding(false);
     if (res.ok) {
+      toast.success(`${newName} added`, {
+        description: "They'll appear on the dashboard after their first report.",
+      });
       setNewName("");
       setNewEmail("");
-      setStatus("");
       load();
     } else {
-      setStatus((await res.json()).error ?? "failed to add");
+      toast.error("Couldn't add member", {
+        description: (await res.json()).error ?? "Check the name and email.",
+      });
     }
   };
 
-  const patchUser = async (id: string, body: object) => {
-    await fetch(`/api/admin/users/${id}`, {
+  const patchUser = async (id: string, body: object, message?: string) => {
+    const res = await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (res.ok && message) toast.success(message);
+    if (!res.ok) toast.error("Action failed");
     load();
   };
 
   const deleteUser = async (id: string, name: string) => {
     if (!confirm(`Remove ${name} and all their usage history?`)) return;
-    await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+    if (res.ok)
+      toast.success(`${name} removed`, {
+        description: "Their machine can no longer report until re-added.",
+      });
+    else toast.error("Couldn't remove member");
     load();
   };
 
@@ -86,7 +101,7 @@ export default function MembersPage() {
 
   return (
     <>
-      <PageHeader title="Members" description="Everyone whose Claude usage is tracked in this workspace">{status && <p className="text-muted-foreground text-sm">{status}</p>}</PageHeader>
+      <PageHeader title="Members" description="Everyone whose Claude usage is tracked in this workspace"></PageHeader>
       <main className="w-full px-8 py-6">
 
       <div className="bg-card rounded-lg border">
@@ -103,9 +118,9 @@ export default function MembersPage() {
             placeholder="email@company.com"
             className="h-9 w-64"
           />
-          <Button size="sm" onClick={addUser}>
+          <Button size="sm" onClick={addUser} disabled={adding}>
             <UserPlus />
-            Add member
+            {adding ? "Adding…" : "Add member"}
           </Button>
           <span className="text-muted-foreground ms-auto text-xs">
             {users.length} member{users.length === 1 ? "" : "s"}
@@ -158,17 +173,17 @@ export default function MembersPage() {
                           onClick={() =>
                             navigator.clipboard
                               .writeText(installCmd(u))
-                              .then(() => setStatus(`Install command for ${u.name} copied`))
+                              .then(() => toast.success(`Install command for ${u.name} copied`))
                           }
                         >
                           <Copy />
                           Copy install command
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => patchUser(u.id, { active: !u.active })}>
+                        <DropdownMenuItem onClick={() => patchUser(u.id, { active: !u.active }, u.active ? `${u.name} disabled` : `${u.name} enabled`)}>
                           <Power />
                           {u.active ? "Disable tracking" : "Enable tracking"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => patchUser(u.id, { regenerateKey: true })}>
+                        <DropdownMenuItem onClick={() => patchUser(u.id, { regenerateKey: true }, `New key for ${u.name} — share their new install command`)}>
                           <KeyRound />
                           Regenerate key
                         </DropdownMenuItem>

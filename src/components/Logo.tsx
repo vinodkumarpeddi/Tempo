@@ -9,11 +9,19 @@ export default function Logo({
     <span
       className={`inline-flex shrink-0 items-center justify-center border border-white/10 bg-[#0a0a0a] ${rounded} ${className}`}
     >
-      {/* tempo: usage rises and resets like a beat */}
-      <svg viewBox="0 0 24 24" fill="white" className="size-[62%]" aria-hidden>
-        <rect x="4.6" y="12.5" width="3.6" height="7" rx="1.8" />
-        <rect x="10.2" y="8.5" width="3.6" height="11" rx="1.8" />
-        <rect x="15.8" y="4.5" width="3.6" height="15" rx="1.8" />
+      {/* brimly: the ring is the limit, the arc is how full you are */}
+      <svg viewBox="0 0 24 24" fill="none" className="size-[64%]" aria-hidden>
+        <circle cx="12" cy="12" r="7.5" stroke="white" strokeOpacity="0.3" strokeWidth="3.2" />
+        <circle
+          cx="12"
+          cy="12"
+          r="7.5"
+          stroke="white"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+          strokeDasharray="33 47.1"
+          transform="rotate(-90 12 12)"
+        />
       </svg>
     </span>
   );

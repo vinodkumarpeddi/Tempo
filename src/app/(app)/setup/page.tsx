@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CopyBlock from "@/components/CopyBlock";
 import PageHeader from "@/components/PageHeader";
 
@@ -53,59 +52,72 @@ export default function SetupPage() {
         description="Three steps to a fully reporting team"
       ></PageHeader>
       <main className="mx-auto w-full max-w-2xl px-6 py-8">
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>How it works</CardTitle>
-            <CardDescription>
-              A small collector on each member&apos;s machine reads their Claude Code login
-              locally and reports <b>only usage percentages</b> here. Tokens never leave the
-              machine.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <div className="border-border bg-card mb-10 overflow-hidden rounded-2xl border">
+          <div className="px-6 pt-5 pb-4">
+            <div className="mb-1 flex items-center gap-2">
+              <h2 className="text-[15px] font-semibold tracking-tight">Team install command</h2>
+              <span className="border-border text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                one command for everyone
+              </span>
+            </div>
+            <p className="text-muted-foreground text-[13px]">
+              Drop this in your team chat. It detects each person&apos;s Claude account
+              automatically and reports <b>only usage percentages</b> — tokens never leave
+              their machine.
+            </p>
+          </div>
+          <div className="px-6 pb-5">
+            <CopyBlock text={teamCmd} />
+          </div>
+        </div>
 
-        <Step n="1" title="Share the team install command">
+        <Step n="1" title="Everyone runs it once">
           <p>
-            One command for your whole team — drop it in your team chat. It carries this
-            workspace&apos;s address and key, so it always points people to the right place.
-          </p>
-          <CopyBlock text={teamCmd} />
-        </Step>
-
-        <Step n="2" title="Everyone runs it once">
-          <p>
-            Each person pastes it into a terminal on the machine where they use Claude Code.
-            It detects their Claude account automatically — they appear on the dashboard after
-            their first report, no setup on your side.
+            Pasted into a terminal on the machine where they use Claude Code — that&apos;s the
+            only thing a member ever does. Reporting starts immediately and survives restarts.
           </p>
           <p className="text-xs">
             macOS shows a one-time Keychain prompt for &quot;Claude Code-credentials&quot; →
-            click <b>Always Allow</b>. Reporting survives restarts.
+            click <b>Always Allow</b>.
           </p>
         </Step>
 
-        <Step n="3" title="Choose cadence and reports" last>
+        <Step n="2" title="Watch the dashboard fill in">
+          <p>
+            Each person appears on the{" "}
+            <Link href="/dashboard" className="text-primary font-medium underline underline-offset-4">
+              Dashboard
+            </Link>{" "}
+            after their first report — meters, reset dates, and daily peaks, sorted by who has
+            the most capacity left.
+          </p>
+        </Step>
+
+        <Step n="3" title="Tune cadence, reports, and alerts" last>
           <p>
             In{" "}
             <Link href="/settings" className="text-primary font-medium underline underline-offset-4">
               Settings
             </Link>
-            : how often machines report (15&nbsp;min – 2&nbsp;h), when the daily email goes out,
-            inline or PDF format, and who receives it. Alerts fire automatically at your warn
-            and critical thresholds.
+            : how often machines report, exact report times on the days you choose, inline or
+            PDF format, and warn/critical thresholds. Every change reaches all machines
+            automatically.
           </p>
         </Step>
 
         <div className="border-border/70 mt-2 border-t pt-8">
           <h3 className="mb-1.5 text-sm font-medium">Deploying to a server?</h3>
           <p className="text-muted-foreground mb-3 text-sm">
-            Set the email key, then let cron trigger the daily report (safe to call hourly —
-            it sends once, at your configured time):
+            Set the email credentials, then let cron trigger reports (safe to call every few
+            minutes — each configured time sends exactly once):
           </p>
           <CopyBlock
             text={`# .env
-RESEND_API_KEY=re_xxx
-EMAIL_FROM="Tempo <usage@yourdomain.com>"
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=you@gmail.com
+SMTP_PASS=<app password>
+EMAIL_FROM="Brimly <you@gmail.com>"
 APP_URL=https://your-server
 
 # crontab

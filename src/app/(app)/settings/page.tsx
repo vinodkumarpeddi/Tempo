@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Check, FileText, Plus, Send, Table2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -105,7 +106,8 @@ function Segmented<T extends string | number>({
 export default function SettingsPage() {
   const router = useRouter();
   const [settings, setSettings] = useState<AdminSettings | null>(null);
-  const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings").then(async (res) => {
@@ -133,26 +135,32 @@ export default function SettingsPage() {
   };
 
   const save = async () => {
-    if (!settings) return;
+    if (!settings || saving) return;
+    setSaving(true);
     const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...settings, digestTimes: times, digestDays: days }),
     });
-    setStatus(res.ok ? "Settings saved" : "Failed to save settings");
+    setSaving(false);
+    if (res.ok) toast.success("Settings saved", { description: "Changes are live for every collector." });
+    else toast.error("Couldn't save settings", { description: "Check the values and try again." });
   };
 
   const sendTest = async () => {
-    setStatus("Sending test report…");
+    if (testing) return;
+    setTesting(true);
     const res = await fetch("/api/cron/daily?force=1");
     const body = await res.json().catch(() => ({}));
-    setStatus(
-      res.ok
-        ? body.sent
-          ? `Report sent to ${body.recipients} recipient(s)`
-          : `Not sent: ${body.reason ?? "check RESEND_API_KEY"}`
-        : "Request failed",
-    );
+    setTesting(false);
+    if (res.ok && body.sent)
+      toast.success(`Test report sent to ${body.recipients} recipient(s)`, {
+        description: "Check the inbox in a few seconds.",
+      });
+    else
+      toast.error("Report not sent", {
+        description: body.reason ?? "Check the email configuration.",
+      });
   };
 
   if (!settings) {
@@ -171,9 +179,7 @@ export default function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Collection cadence, reports, and alert thresholds"
-      >
-        {status && <p className="text-muted-foreground text-sm">{status}</p>}
-      </PageHeader>
+      ></PageHeader>
       <main className="w-full px-8 pt-8">
         <div className="mx-auto max-w-2xl space-y-6">
           <Card
@@ -421,12 +427,12 @@ export default function SettingsPage() {
             <p className="text-muted-foreground me-auto text-xs">
               Changes apply immediately after saving.
             </p>
-            <Button variant="outline" size="sm" onClick={sendTest}>
-              <Send />
-              Send test report
+            <Button variant="outline" size="sm" onClick={sendTest} disabled={testing}>
+              <Send className={testing ? "animate-pulse" : undefined} />
+              {testing ? "Sending…" : "Send test report"}
             </Button>
-            <Button size="sm" onClick={save}>
-              Save settings
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving ? "Saving…" : "Save settings"}
             </Button>
           </div>
         </div>

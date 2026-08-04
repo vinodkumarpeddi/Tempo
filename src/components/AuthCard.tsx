@@ -41,7 +41,7 @@ export default function AuthCard({
         )}
       </div>
       <p className="text-muted-foreground/60 absolute bottom-6 text-xs">
-        Tempo — Claude usage for teams · self-hosted
+        Brimly — Claude usage for teams · self-hosted
       </p>
     </div>
   );
