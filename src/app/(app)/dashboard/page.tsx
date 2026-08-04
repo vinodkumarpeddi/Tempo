@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import { Separator } from "@/components/ui/separator";
 import Meter, { fmtCountdown, fmtResetDate, statusOf } from "@/components/Meter";
+import Sparkline from "@/components/Sparkline";
 
 type Member = {
   id: string;
@@ -26,6 +27,7 @@ type Member = {
     sevenDayResetsAt: string;
     capturedAt: string;
   } | null;
+  spark: number[];
 };
 
 type TeamResponse = {
@@ -240,6 +242,14 @@ export default function TeamPage() {
                   warn={data!.thresholds.warn}
                   critical={data!.thresholds.critical}
                 />
+                {m.spark.length > 1 && (
+                  <div className="border-border/70 border-t pt-3">
+                    <div className="text-muted-foreground/80 mb-1 text-[10px] font-medium tracking-wider uppercase">
+                      Weekly trend
+                    </div>
+                    <Sparkline values={m.spark} label={`${m.name} weekly usage trend`} />
+                  </div>
+                )}
               </div>
             </Link>
           );

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       include: {
         snapshots: {
           orderBy: { capturedAt: "desc" },
-          take: 1,
+          take: 48,
           select: {
             fiveHourPct: true,
             fiveHourResetsAt: true,
@@ -42,6 +42,10 @@ export async function GET(req: NextRequest) {
         name: u.name,
         email: u.email,
         snapshot: s,
+        spark: u.snapshots
+          .slice()
+          .reverse()
+          .map((x) => x.sevenDayPct),
         stale: s ? Date.now() - s.capturedAt.getTime() > staleMs : true,
       };
     }),
