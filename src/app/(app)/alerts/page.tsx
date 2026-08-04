@@ -56,7 +56,7 @@ export default function AlertsPage() {
   return (
     <>
       <PageHeader title="Alerts" description="Every threshold warning and reset notice that has been sent"></PageHeader>
-      <main className="mx-auto w-full max-w-5xl px-6 py-6">
+      <main className="w-full px-8 py-6">
 
       {alerts && alerts.length === 0 && (
         <EmptyState
@@ -88,7 +88,7 @@ export default function AlertsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2.5">
-                          <MonogramAvatar name={a.member} colorful className="size-7 text-[10px]" />
+                          <MonogramAvatar name={a.member} className="size-7 text-[10px]" />
                           <div>
                             <span className="text-sm font-medium">{a.member}</span>{" "}
                             <span className="text-muted-foreground text-xs">{a.email}</span>

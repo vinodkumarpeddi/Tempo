@@ -82,7 +82,7 @@ export default function MembersPage() {
   return (
     <>
       <PageHeader title="Members" description="Everyone whose Claude usage is tracked in this workspace">{status && <p className="text-muted-foreground text-sm">{status}</p>}</PageHeader>
-      <main className="mx-auto w-full max-w-5xl px-6 py-6">
+      <main className="w-full px-8 py-6">
 
       <Card className="overflow-hidden pb-0">
         <CardHeader>
@@ -124,7 +124,7 @@ export default function MembersPage() {
                 <TableRow key={u.id}>
                   <TableCell className="ps-6">
                     <div className="flex items-center gap-3">
-                      <MonogramAvatar name={u.name} colorful />
+                      <MonogramAvatar name={u.name} />
                       <div>
                         <div className="font-medium">{u.name}</div>
                         <div className="text-muted-foreground text-xs">{u.email}</div>

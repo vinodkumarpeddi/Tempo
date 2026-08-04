@@ -64,43 +64,45 @@ type ViewMode = "table" | "cards";
 type StatusFilter = "all" | "available" | "near" | "stale" | "none";
 type SortKey = "headroom" | "name" | "session" | "weekly" | "lastReport";
 
-const HEADROOM_CHIP = {
-  good: "bg-[color-mix(in_oklch,var(--color-emerald-500)_12%,transparent)] text-[var(--color-emerald-700)] dark:text-[var(--color-emerald-400)]",
-  warning:
-    "bg-[color-mix(in_oklch,var(--color-amber-500)_14%,transparent)] text-[var(--color-amber-700)] dark:text-[var(--color-amber-400)]",
-  critical:
-    "bg-[color-mix(in_oklch,var(--color-rose-500)_12%,transparent)] text-[var(--color-rose-700)] dark:text-[var(--color-rose-400)]",
+const STATUS_DOT = {
+  good: "var(--color-emerald-500)",
+  warning: "var(--color-amber-500)",
+  critical: "var(--color-rose-500)",
 };
+
+function HeadroomPill({ pct, warn, critical }: { pct: number; warn: number; critical: number }) {
+  return (
+    <span className="border-border bg-card inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium whitespace-nowrap tabular-nums">
+      <span
+        className="size-1.5 shrink-0 rounded-full"
+        style={{ background: STATUS_DOT[statusOf(pct, warn, critical)] }}
+      />
+      {Math.max(0, 100 - pct).toFixed(0)}% left
+    </span>
+  );
+}
 
 function StatTile({
   icon,
   label,
   value,
   hint,
-  tone = "brand",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   hint?: string;
-  tone?: "brand" | "amber" | "emerald";
 }) {
-  const chip =
-    tone === "amber"
-      ? "bg-[color-mix(in_oklch,var(--color-amber-500)_12%,transparent)] text-[var(--color-amber-700)] dark:text-[var(--color-amber-400)]"
-      : tone === "emerald"
-        ? "bg-[color-mix(in_oklch,var(--color-emerald-500)_12%,transparent)] text-[var(--color-emerald-700)] dark:text-[var(--color-emerald-400)]"
-        : "bg-brand-50 text-brand-700 dark:bg-[color-mix(in_oklch,var(--color-brand-500)_15%,transparent)] dark:text-brand-300";
   return (
-    <div className="bg-card flex items-start gap-3.5 rounded-xl border p-4">
-      <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${chip}`}>
+    <div className="bg-card rounded-lg border p-4">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
         {icon}
-      </span>
-      <div className="min-w-0">
-        <div className="text-muted-foreground text-xs font-medium">{label}</div>
-        <div className="mt-0.5 truncate text-2xl font-semibold tracking-tight">{value}</div>
-        {hint && <div className="text-muted-foreground mt-0.5 truncate text-xs">{hint}</div>}
+        {label}
       </div>
+      <div className="mt-2.5 truncate text-[26px] leading-none font-semibold tracking-tight">
+        {value}
+      </div>
+      {hint && <div className="text-muted-foreground mt-2 truncate text-xs">{hint}</div>}
     </div>
   );
 }
@@ -247,20 +249,20 @@ export default function TeamPage() {
           </p>
         )}
       </PageHeader>
-      <main className="mx-auto w-full max-w-6xl px-6 py-6">
+      <main className="w-full px-8 py-6">
       {error && <p className="text-sm">Failed to load team data.</p>}
 
       {data && stats && data.members.length > 0 && (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile
-              icon={<Users className="size-4" />}
+              icon={<Users className="size-3.5" />}
               label="Members"
               value={String(data.members.length)}
               hint={`${stats.reporting.length} reporting`}
             />
             <StatTile
-              icon={<BatteryCharging className="size-4" />}
+              icon={<BatteryCharging className="size-3.5" />}
               label="Most available"
               value={stats.mostAvailable ? stats.mostAvailable.name : "—"}
               hint={
@@ -268,10 +270,9 @@ export default function TeamPage() {
                   ? `${(100 - stats.mostAvailable.snapshot!.sevenDayPct).toFixed(0)}% of weekly limit left`
                   : "no reports yet"
               }
-              tone="emerald"
             />
             <StatTile
-              icon={<TriangleAlert className="size-4" />}
+              icon={<TriangleAlert className="size-3.5" />}
               label="Near limits"
               value={String(stats.atRisk.length)}
               hint={
@@ -279,10 +280,9 @@ export default function TeamPage() {
                   ? stats.atRisk.map((m) => m.name).join(", ")
                   : "everyone in the clear"
               }
-              tone={stats.atRisk.length ? "amber" : "brand"}
             />
             <StatTile
-              icon={<CalendarClock className="size-4" />}
+              icon={<CalendarClock className="size-3.5" />}
               label="Next weekly reset"
               value={
                 stats.nextReset ? fmtCountdown(stats.nextReset.snapshot!.sevenDayResetsAt) : "—"
@@ -351,7 +351,7 @@ export default function TeamPage() {
             <div className="bg-card overflow-x-auto rounded-b-xl border">
               <Table>
                 <TableHeader>
-                  <TableRow className="text-xs">
+                  <TableRow className="[&_th]:text-[11px] [&_th]:font-medium [&_th]:tracking-wider [&_th]:uppercase">
                     {th("Member", "name", "ps-4")}
                     {th("Session (5h)", "session", "min-w-40")}
                     {th("Weekly", "weekly", "min-w-40")}
@@ -365,11 +365,6 @@ export default function TeamPage() {
                 <TableBody>
                   {filtered.map((m) => {
                     const s = m.snapshot;
-                    const tone = s
-                      ? HEADROOM_CHIP[
-                          statusOf(s.sevenDayPct, data.thresholds.warn, data.thresholds.critical)
-                        ]
-                      : "";
                     return (
                       <TableRow
                         key={m.id}
@@ -378,7 +373,7 @@ export default function TeamPage() {
                       >
                         <TableCell className="ps-4">
                           <div className="flex items-center gap-2.5">
-                            <MonogramAvatar name={m.name} colorful className="size-8 text-xs" />
+                            <MonogramAvatar name={m.name} className="size-8 text-xs" />
                             <div className="min-w-0">
                               <div className="text-sm font-medium">{m.name}</div>
                               <div className="text-muted-foreground truncate text-xs">
@@ -435,11 +430,11 @@ export default function TeamPage() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${tone}`}
-                              >
-                                {(100 - s.sevenDayPct).toFixed(0)}% left
-                              </span>
+                              <HeadroomPill
+                                pct={s.sevenDayPct}
+                                warn={data.thresholds.warn}
+                                critical={data.thresholds.critical}
+                              />
                             </TableCell>
                             <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                               in {fmtCountdown(s.fiveHourResetsAt)}
@@ -490,11 +485,6 @@ export default function TeamPage() {
                 .filter((m) => m.snapshot)
                 .map((m) => {
                   const s = m.snapshot!;
-                  const weeklyLeft = Math.max(0, 100 - s.sevenDayPct);
-                  const chipTone =
-                    HEADROOM_CHIP[
-                      statusOf(s.sevenDayPct, data.thresholds.warn, data.thresholds.critical)
-                    ];
                   return (
                     <Link
                       key={m.id}
@@ -502,16 +492,16 @@ export default function TeamPage() {
                       className="group bg-card hover:border-ring/40 rounded-xl border p-5 transition-colors hover:shadow-sm"
                     >
                       <div className="mb-4 flex items-center gap-3">
-                        <MonogramAvatar name={m.name} colorful className="size-10 text-sm" />
+                        <MonogramAvatar name={m.name} className="size-10 text-sm" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium">{m.name}</div>
                           <div className="text-muted-foreground truncate text-xs">{m.email}</div>
                         </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${chipTone}`}
-                        >
-                          {weeklyLeft.toFixed(0)}% left
-                        </span>
+                        <HeadroomPill
+                          pct={s.sevenDayPct}
+                          warn={data.thresholds.warn}
+                          critical={data.thresholds.critical}
+                        />
                         <ChevronRight className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 shrink-0 transition-colors" />
                       </div>
                       <div className="space-y-4">

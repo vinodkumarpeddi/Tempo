@@ -11,7 +11,7 @@ export default function PageHeader({
 }) {
   return (
     <div className="border-border/70 border-b">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-3 px-6 pt-7 pb-5">
+      <div className="flex w-full flex-wrap items-end justify-between gap-3 px-8 pt-7 pb-5">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           {description && <p className="text-muted-foreground mt-1 text-sm">{description}</p>}
