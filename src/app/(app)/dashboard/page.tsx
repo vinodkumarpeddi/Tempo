@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
@@ -38,8 +37,6 @@ import {
 } from "@/components/ui/table";
 import Meter, { fmtCountdown, fmtResetDate, statusOf } from "@/components/Meter";
 import PageHeader from "@/components/PageHeader";
-import Sparkline from "@/components/Sparkline";
-import TeamTrendChart from "@/components/TeamTrendChart";
 
 type Member = {
   id: string;
@@ -74,51 +71,6 @@ const HEADROOM_CHIP = {
   critical:
     "bg-[color-mix(in_oklch,var(--color-rose-500)_12%,transparent)] text-[var(--color-rose-700)] dark:text-[var(--color-rose-400)]",
 };
-
-const SCOPED_FILL = {
-  good: "var(--color-emerald-500)",
-  warning: "var(--color-amber-500)",
-  critical: "var(--color-rose-500)",
-};
-
-function ScopedRow({
-  scoped,
-  warn,
-  critical,
-}: {
-  scoped: { label: string; pct: number; resetsAt: string }[];
-  warn: number;
-  critical: number;
-}) {
-  if (scoped.length === 0) return null;
-  return (
-    <div className="space-y-1.5">
-      {scoped.map((sc) => (
-        <div
-          key={sc.label}
-          className="flex items-center gap-2"
-          title={`${sc.label} weekly · resets ${fmtResetDate(sc.resetsAt)}`}
-        >
-          <span className="text-muted-foreground w-14 shrink-0 truncate text-[11px]">
-            {sc.label}
-          </span>
-          <div className="bg-secondary h-1.5 flex-1 overflow-hidden rounded-full">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.min(100, Math.max(0, sc.pct))}%`,
-                background: SCOPED_FILL[statusOf(sc.pct, warn, critical)],
-              }}
-            />
-          </div>
-          <span className="w-9 shrink-0 text-right text-[11px] font-semibold tabular-nums">
-            {sc.pct.toFixed(0)}%
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function StatTile({
   icon,
@@ -343,21 +295,6 @@ export default function TeamPage() {
             />
           </div>
 
-          <Card className="mb-4">
-            <CardHeader className="pb-0">
-              <CardTitle>Weekly usage trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TeamTrendChart
-                series={stats.reporting.map((m) => ({
-                  name: m.name,
-                  values: m.spark,
-                  at: m.sparkAt,
-                }))}
-              />
-            </CardContent>
-          </Card>
-
           <div
             className={
               view === "table"
@@ -418,6 +355,7 @@ export default function TeamPage() {
                     {th("Member", "name", "ps-4")}
                     {th("Session (5h)", "session", "min-w-40")}
                     {th("Weekly", "weekly", "min-w-40")}
+                    <TableHead className="min-w-32">Model limits</TableHead>
                     <TableHead>Headroom</TableHead>
                     <TableHead>Session resets</TableHead>
                     <TableHead>Weekly resets</TableHead>
@@ -468,17 +406,32 @@ export default function TeamPage() {
                                 critical={data.thresholds.critical}
                                 compact
                               />
-                              {m.scoped.length > 0 && (
-                                <div
-                                  className="text-muted-foreground mt-1 text-[10px]"
-                                  title={m.scoped
-                                    .map((sc) => `${sc.label} resets ${fmtResetDate(sc.resetsAt)}`)
-                                    .join(" · ")}
-                                >
-                                  {m.scoped
-                                    .map((sc) => `${sc.label} ${sc.pct.toFixed(0)}%`)
-                                    .join(" · ")}
+                            </TableCell>
+                            <TableCell>
+                              {m.scoped.length > 0 ? (
+                                <div className="space-y-2">
+                                  {m.scoped.map((sc) => (
+                                    <div
+                                      key={sc.label}
+                                      title={`${sc.label} weekly · resets ${fmtResetDate(sc.resetsAt)}`}
+                                    >
+                                      <div className="mb-0.5 flex items-baseline justify-between gap-2">
+                                        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+                                          {sc.label}
+                                        </span>
+                                      </div>
+                                      <Meter
+                                        pct={sc.pct}
+                                        resetsAt={sc.resetsAt}
+                                        warn={data.thresholds.warn}
+                                        critical={data.thresholds.critical}
+                                        compact
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -511,7 +464,7 @@ export default function TeamPage() {
                             </TableCell>
                           </>
                         ) : (
-                          <TableCell colSpan={6} className="text-muted-foreground pe-4 text-sm">
+                          <TableCell colSpan={7} className="text-muted-foreground pe-4 text-sm">
                             no data reported yet — install the collector
                           </TableCell>
                         )}
@@ -521,7 +474,7 @@ export default function TeamPage() {
                   {filtered.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-muted-foreground py-10 text-center text-sm"
                       >
                         No members match the current filters.
@@ -577,26 +530,18 @@ export default function TeamPage() {
                           warn={data.thresholds.warn}
                           critical={data.thresholds.critical}
                         />
-                        {m.scoped.length > 0 && (
-                          <div className="border-border/70 border-t pt-3">
-                            <div className="text-muted-foreground/80 mb-1.5 text-[10px] font-medium tracking-wider uppercase">
-                              Model limits
-                            </div>
-                            <ScopedRow
-                              scoped={m.scoped}
+                        {m.scoped.map((sc) => (
+                          <div key={sc.label}>
+                            <Separator className="mb-4" />
+                            <Meter
+                              label={`Weekly · ${sc.label}`}
+                              pct={sc.pct}
+                              resetsAt={sc.resetsAt}
                               warn={data.thresholds.warn}
                               critical={data.thresholds.critical}
                             />
                           </div>
-                        )}
-                        {m.spark.length > 1 && (
-                          <div className="border-border/70 border-t pt-3">
-                            <div className="text-muted-foreground/80 mb-1 text-[10px] font-medium tracking-wider uppercase">
-                              Weekly trend
-                            </div>
-                            <Sparkline values={m.spark} label={`${m.name} weekly usage trend`} />
-                          </div>
-                        )}
+                        ))}
                       </div>
                     </Link>
                   );
