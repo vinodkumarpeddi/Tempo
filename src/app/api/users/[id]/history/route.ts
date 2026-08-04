@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getSettings, prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -19,18 +19,41 @@ export async function GET(
   });
   if (!user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const snapshots = await prisma.snapshot.findMany({
-    where: {
-      userId: id,
-      capturedAt: { gte: new Date(Date.now() - days * 86_400_000) },
-    },
-    orderBy: { capturedAt: "asc" },
-    select: {
-      fiveHourPct: true,
-      sevenDayPct: true,
-      capturedAt: true,
+  const [snapshots, latest] = await Promise.all([
+    prisma.snapshot.findMany({
+      where: {
+        userId: id,
+        capturedAt: { gte: new Date(Date.now() - days * 86_400_000) },
+      },
+      orderBy: { capturedAt: "asc" },
+      select: {
+        fiveHourPct: true,
+        sevenDayPct: true,
+        capturedAt: true,
+      },
+    }),
+    prisma.snapshot.findFirst({
+      where: { userId: id },
+      orderBy: { capturedAt: "desc" },
+      select: {
+        fiveHourPct: true,
+        fiveHourResetsAt: true,
+        sevenDayPct: true,
+        sevenDayResetsAt: true,
+        capturedAt: true,
+      },
+    }),
+  ]);
+
+  const settings = await getSettings();
+
+  return NextResponse.json({
+    user,
+    snapshots,
+    latest,
+    thresholds: {
+      warn: settings.warnThreshold,
+      critical: settings.criticalThreshold,
     },
   });
-
-  return NextResponse.json({ user, snapshots });
 }

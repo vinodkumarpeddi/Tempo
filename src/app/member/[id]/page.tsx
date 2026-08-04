@@ -7,10 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import HistoryChart, { HistoryPoint } from "@/components/HistoryChart";
+import Meter from "@/components/Meter";
 
 type HistoryResponse = {
   user: { id: string; name: string; email: string };
   snapshots: HistoryPoint[];
+  latest: {
+    fiveHourPct: number;
+    fiveHourResetsAt: string;
+    sevenDayPct: number;
+    sevenDayResetsAt: string;
+    capturedAt: string;
+  } | null;
+  thresholds: { warn: number; critical: number };
 };
 
 const RANGES = [7, 14, 30] as const;
@@ -44,13 +53,49 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
       {error && <p className="mt-4 text-sm">Member not found.</p>}
       {data && (
         <>
-          <div className="mb-6 flex items-center gap-3">
-            <MonogramAvatar name={data.user.name} colorful className="size-10 text-sm" />
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">{data.user.name}</h1>
-              <p className="text-muted-foreground text-sm">{data.user.email}</p>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <MonogramAvatar name={data.user.name} colorful className="size-11 text-sm" />
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">{data.user.name}</h1>
+                <p className="text-muted-foreground text-sm">{data.user.email}</p>
+              </div>
             </div>
+            {data.latest && (
+              <p className="text-muted-foreground text-xs">
+                last report{" "}
+                {new Date(data.latest.capturedAt).toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            )}
           </div>
+
+          {data.latest && (
+            <div className="mb-4 grid gap-4 sm:grid-cols-2">
+              <div className="bg-card rounded-xl border p-5">
+                <Meter
+                  label="Session · 5 hour"
+                  pct={data.latest.fiveHourPct}
+                  resetsAt={data.latest.fiveHourResetsAt}
+                  warn={data.thresholds.warn}
+                  critical={data.thresholds.critical}
+                />
+              </div>
+              <div className="bg-card rounded-xl border p-5">
+                <Meter
+                  label="Weekly"
+                  pct={data.latest.sevenDayPct}
+                  resetsAt={data.latest.sevenDayResetsAt}
+                  warn={data.thresholds.warn}
+                  critical={data.thresholds.critical}
+                />
+              </div>
+            </div>
+          )}
 
           <Card>
             <CardHeader className="flex-row items-center justify-between">

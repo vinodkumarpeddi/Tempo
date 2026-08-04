@@ -1,5 +1,7 @@
 "use client";
 
+import { CalendarClock } from "lucide-react";
+
 export function statusOf(pct: number, warn: number, critical: number) {
   if (pct >= critical) return "critical" as const;
   if (pct >= warn) return "warning" as const;
@@ -24,7 +26,7 @@ const INK_DARK = {
   critical: "var(--color-rose-400)",
 };
 
-const STATUS_ICON = { good: "", warning: "▲ ", critical: "● " };
+const STATUS_TEXT = { good: "", warning: "high", critical: "critical" };
 
 export function fmtCountdown(iso: string) {
   const mins = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 60000));
@@ -62,25 +64,33 @@ export default function Meter({
   compact?: boolean;
 }) {
   const status = statusOf(pct, warn, critical);
+  const inkVars = {
+    "--meter-ink": INK[status],
+    "--meter-ink-dark": INK_DARK[status],
+  } as React.CSSProperties;
+
   return (
     <div className="min-w-0">
-      <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
-        {label && <span className="text-muted-foreground">{label}</span>}
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        {label && (
+          <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            {label}
+          </span>
+        )}
         <span
-          className="font-semibold tabular-nums [color:var(--meter-ink)] dark:[color:var(--meter-ink-dark)]"
-          style={
-            {
-              "--meter-ink": INK[status],
-              "--meter-ink-dark": INK_DARK[status],
-            } as React.CSSProperties
-          }
+          className={`${compact ? "text-sm" : "text-lg"} leading-none font-semibold tabular-nums [color:var(--meter-ink)] dark:[color:var(--meter-ink-dark)]`}
+          style={inkVars}
         >
-          {STATUS_ICON[status]}
           {pct.toFixed(0)}%
+          {STATUS_TEXT[status] && (
+            <span className="ms-1.5 text-[10px] font-semibold tracking-wide uppercase">
+              {STATUS_TEXT[status]}
+            </span>
+          )}
         </span>
       </div>
       <div
-        className="bg-secondary h-2 w-full overflow-hidden rounded-[4px]"
+        className={`bg-secondary w-full overflow-hidden rounded-full ${compact ? "h-1.5" : "h-2"}`}
         role="meter"
         aria-valuenow={Math.round(pct)}
         aria-valuemin={0}
@@ -88,7 +98,7 @@ export default function Meter({
         aria-label={`${label ?? "usage"} utilization`}
       >
         <div
-          className="h-full rounded-[4px] transition-[width] duration-500"
+          className="h-full rounded-full transition-[width] duration-500"
           style={{
             width: `${Math.min(100, Math.max(0, pct))}%`,
             background: FILL[status],
@@ -96,8 +106,13 @@ export default function Meter({
         />
       </div>
       {!compact && (
-        <div className="text-muted-foreground mt-1 text-[11px]">
-          resets in {fmtCountdown(resetsAt)} &middot; {fmtResetDate(resetsAt)}
+        <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-xs">
+          <CalendarClock className="size-3.5 shrink-0" />
+          <span>
+            resets in <span className="text-foreground font-medium">{fmtCountdown(resetsAt)}</span>
+            {" · "}
+            {fmtResetDate(resetsAt)}
+          </span>
         </div>
       )}
     </div>

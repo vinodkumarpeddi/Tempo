@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
+import TopNav from "@/components/TopNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,9 +18,11 @@ export const metadata: Metadata = {
   description: "Session and weekly limit tracking for your team's Claude accounts",
 };
 
-const darkModeScript = `
+// Light by default (the EverHr frame: dark slate chrome around a light
+// content surface); dark only when the user toggled it.
+const themeScript = `
 try {
-  if (window.matchMedia("(prefers-color-scheme: dark)").matches)
+  if (localStorage.getItem("theme") === "dark")
     document.documentElement.classList.add("dark");
 } catch (e) {}
 `;
@@ -33,24 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-sidebar">
-        <header className="bg-sidebar text-sidebar-foreground">
-          <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-6">
-            <Link href="/" className="text-sm font-semibold tracking-tight">
-              Claude <span className="text-sidebar-primary">Team Usage</span>
-            </Link>
-            <nav className="flex items-center gap-5 text-sm">
-              <Link href="/" className="text-sidebar-foreground/80 hover:text-sidebar-foreground">
-                Team
-              </Link>
-              <Link href="/admin" className="text-sidebar-foreground/80 hover:text-sidebar-foreground">
-                Admin
-              </Link>
-            </nav>
-          </div>
-        </header>
+      <body className="bg-sidebar flex min-h-full flex-col">
+        <TopNav />
         <div className="bg-background border-border/40 mx-3 mb-3 flex-1 rounded-[14px] border">
           {children}
         </div>
