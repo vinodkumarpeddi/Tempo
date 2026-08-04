@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, KeyRound, Trash2, UserPlus } from "lucide-react";
+import { Copy, KeyRound, MoreHorizontal, Power, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import PageHeader from "@/components/PageHeader";
 import {
@@ -138,42 +145,43 @@ export default function MembersPage() {
                   </span>
                 </TableCell>
                 <TableCell className="pe-4">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        navigator.clipboard
-                          .writeText(installCmd(u))
-                          .then(() => setStatus(`Install command for ${u.name} copied`))
-                      }
-                    >
-                      <Copy />
-                      Install cmd
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patchUser(u.id, { active: !u.active })}
-                    >
-                      {u.active ? "Disable" : "Enable"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => patchUser(u.id, { regenerateKey: true })}
-                    >
-                      <KeyRound />
-                      New key
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => deleteUser(u.id, u.name)}
-                    >
-                      <Trash2 />
-                    </Button>
+                  <div className="flex justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="size-8 p-0">
+                          <MoreHorizontal />
+                          <span className="sr-only">Actions for {u.name}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigator.clipboard
+                              .writeText(installCmd(u))
+                              .then(() => setStatus(`Install command for ${u.name} copied`))
+                          }
+                        >
+                          <Copy />
+                          Copy install command
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => patchUser(u.id, { active: !u.active })}>
+                          <Power />
+                          {u.active ? "Disable tracking" : "Enable tracking"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => patchUser(u.id, { regenerateKey: true })}>
+                          <KeyRound />
+                          Regenerate key
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => deleteUser(u.id, u.name)}
+                        >
+                          <Trash2 />
+                          Remove member
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </TableCell>
               </TableRow>

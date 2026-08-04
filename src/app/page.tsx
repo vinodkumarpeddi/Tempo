@@ -59,7 +59,7 @@ export default async function LandingPage() {
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
             <Logo className="size-7" />
-            <span className="text-sm font-semibold tracking-tight">Headroom</span>
+            <span className="text-sm font-semibold tracking-tight">Brim</span>
           </div>
           <nav className="flex items-center gap-2">
             <Link
@@ -135,7 +135,7 @@ export default async function LandingPage() {
                 <span className="size-2.5 rounded-full bg-[#febc2e]" />
                 <span className="size-2.5 rounded-full bg-[#28c840]" />
                 <span className="text-sidebar-foreground/50 ms-3 text-[11px]">
-                  headroom — dashboard
+                  brim — dashboard
                 </span>
               </div>
               <div className="bg-background grid gap-3 rounded-b-xl p-4 text-start sm:grid-cols-3">
@@ -234,7 +234,7 @@ export default async function LandingPage() {
         <div className="text-muted-foreground mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 text-xs">
           <span className="flex items-center gap-2">
             <Logo className="size-5" rounded="rounded-md" />
-            Headroom — Claude capacity for teams
+            Brim — Claude usage for teams
           </span>
           <span>Self-hosted · your data stays yours</span>
         </div>

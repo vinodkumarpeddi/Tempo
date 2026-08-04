@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Headroom — Claude capacity for teams",
+  title: "Brim — Claude usage for teams",
   description: "Know who has Claude capacity left — session and weekly limits, reset dates, reports, and alerts.",
 };
 

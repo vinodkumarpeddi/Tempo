@@ -22,8 +22,9 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const { xs, paths } = useMemo(() => {
-    if (points.length === 0) return { xs: [] as number[], paths: [] as string[] };
+  const { xs, paths, areas, maxY } = useMemo(() => {
+    if (points.length === 0)
+      return { xs: [] as number[], paths: [] as string[], areas: [] as string[], maxY: 100 };
     const t0 = new Date(points[0].capturedAt).getTime();
     const t1 = new Date(points[points.length - 1].capturedAt).getTime();
     const span = Math.max(1, t1 - t0);
@@ -32,19 +33,30 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
         PAD.left +
         ((new Date(p.capturedAt).getTime() - t0) / span) * (W - PAD.left - PAD.right),
     );
+    // Auto-scale the axis to the data so low usage doesn't flatline at the
+    // bottom of a fixed 0-100 range.
+    const dataMax = Math.max(
+      ...points.map((p) => Math.max(p.fiveHourPct, p.sevenDayPct)),
+      1,
+    );
+    const maxY = Math.min(100, Math.max(25, Math.ceil((dataMax * 1.15) / 25) * 25));
     const y = (pct: number) =>
-      PAD.top + (1 - Math.min(100, Math.max(0, pct)) / 100) * (H - PAD.top - PAD.bottom);
-    const paths = SERIES.map((s) => {
+      PAD.top + (1 - Math.min(maxY, Math.max(0, pct)) / maxY) * (H - PAD.top - PAD.bottom);
+    const paths: string[] = [];
+    const areas: string[] = [];
+    for (const sdef of SERIES) {
       const smooth = movingAvg(
-        points.map((p) => p[s.key]),
+        points.map((p) => p[sdef.key]),
         3,
       );
-      return monotonePath(
+      const line = monotonePath(
         xs,
         smooth.map((v) => y(v)),
       );
-    });
-    return { xs, paths };
+      paths.push(line);
+      areas.push(`${line} L${xs[xs.length - 1].toFixed(1)},${H - PAD.bottom} L${xs[0].toFixed(1)},${H - PAD.bottom} Z`);
+    }
+    return { xs, paths, areas, maxY };
   }, [points]);
 
   if (points.length < 2) {
@@ -56,7 +68,8 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
   }
 
   const yFor = (pct: number) =>
-    PAD.top + (1 - pct / 100) * (H - PAD.top - PAD.bottom);
+    PAD.top + (1 - Math.min(maxY, Math.max(0, pct)) / maxY) * (H - PAD.top - PAD.bottom);
+  const ticks = [0, 25, 50, 75, 100].filter((t) => t <= maxY);
 
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect();
@@ -89,7 +102,7 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
           role="img"
           aria-label="Usage history: session and weekly utilization over time"
         >
-          {[0, 25, 50, 75, 100].map((pct) => (
+          {ticks.map((pct) => (
             <g key={pct}>
               <line
                 x1={PAD.left}
@@ -128,7 +141,10 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
             </text>
           ))}
           {SERIES.map((s, si) => (
-            <path key={s.key} d={paths[si]} fill="none" stroke={s.color} strokeWidth={2} />
+            <g key={s.key}>
+              <path d={areas[si]} fill={s.color} opacity={0.07} />
+              <path d={paths[si]} fill="none" stroke={s.color} strokeWidth={2} />
+            </g>
           ))}
           {hover !== null && (
             <g>
@@ -144,7 +160,7 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
                 <circle
                   key={s.key}
                   cx={xs[hover]}
-                  cy={yFor(Math.min(100, Math.max(0, points[hover][s.key])))}
+                  cy={yFor(points[hover][s.key])}
                   r={4}
                   fill={s.color}
                   stroke="var(--card)"

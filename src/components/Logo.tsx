@@ -9,16 +9,19 @@ export default function Logo({
     <span
       className={`bg-sidebar-primary inline-flex shrink-0 items-center justify-center ${rounded} ${className}`}
     >
-      <svg viewBox="0 0 24 24" fill="none" className="size-[62%]" aria-hidden>
-        {/* headroom: the chevron rising above the baseline */}
-        <path
-          d="M6 13.5 12 8l6 5.5"
+      {/* a quota: the ring is the limit, the arc is what's used */}
+      <svg viewBox="0 0 24 24" fill="none" className="size-[64%]" aria-hidden>
+        <circle cx="12" cy="12" r="7.5" stroke="white" strokeOpacity="0.3" strokeWidth="3.2" />
+        <circle
+          cx="12"
+          cy="12"
+          r="7.5"
           stroke="white"
-          strokeWidth={2.6}
+          strokeWidth="3.2"
           strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeDasharray="33 47.1"
+          transform="rotate(-90 12 12)"
         />
-        <path d="M6.5 17.5h11" stroke="white" strokeWidth={2.6} strokeLinecap="round" opacity={0.5} />
       </svg>
     </span>
   );
