@@ -143,8 +143,19 @@ export default function SettingsPage() {
       body: JSON.stringify({ ...settings, digestTimes: times, digestDays: days }),
     });
     setSaving(false);
-    if (res.ok) toast.success("Settings saved", { description: "Changes are live for every collector." });
-    else toast.error("Couldn't save settings", { description: "Check the values and try again." });
+    if (res.ok) {
+      const saved = (await res.json()).settings as AdminSettings;
+      if (Number.isInteger(settings.collectIntervalMin) && saved.collectIntervalMin !== settings.collectIntervalMin) {
+        toast.info(`Interval adjusted to ${saved.collectIntervalMin} min`, {
+          description: "Collectors tick every 10 minutes, so 10 is the fastest possible.",
+        });
+      } else {
+        toast.success("Settings saved", { description: "Changes are live for every collector." });
+      }
+      setSettings(saved);
+    } else {
+      toast.error("Couldn't save settings", { description: "Check the values and try again." });
+    }
   };
 
   const sendTest = async () => {
@@ -209,6 +220,10 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setSettings({ ...settings, collectIntervalMin: Number(e.target.value) })
                     }
+                    onBlur={(e) => {
+                      const v = Math.min(720, Math.max(10, Number(e.target.value) || 10));
+                      setSettings({ ...settings, collectIntervalMin: v });
+                    }}
                     className="w-28 pe-10"
                   />
                   <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
