@@ -1,14 +1,22 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const from = () => process.env.EMAIL_FROM ?? "Claude Usage <onboarding@resend.dev>";
-
-function client() {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return null;
-  return new Resend(key);
-}
+const from = () => process.env.EMAIL_FROM ?? "Tempo <onboarding@resend.dev>";
 
 export type Attachment = { filename: string; content: Buffer };
+
+// SMTP (e.g. Gmail with an app password) wins when configured — it can send
+// to any recipient without a verified domain. Falls back to Resend.
+function smtpTransport() {
+  const { SMTP_HOST, SMTP_USER, SMTP_PASS } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(process.env.SMTP_PORT ?? 465),
+    secure: (process.env.SMTP_PORT ?? "465") === "465",
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+}
 
 export async function sendEmail(
   to: string[],
@@ -16,11 +24,37 @@ export async function sendEmail(
   html: string,
   attachments?: Attachment[],
 ) {
-  const resend = client();
-  if (!resend || to.length === 0) {
-    console.log(`[email skipped] ${subject} -> ${to.join(", ") || "(nobody)"}`);
+  if (to.length === 0) {
+    console.log(`[email skipped] ${subject} -> (nobody)`);
     return false;
   }
+
+  const smtp = smtpTransport();
+  if (smtp) {
+    try {
+      await smtp.sendMail({
+        from: from(),
+        to: to.join(", "),
+        subject,
+        html,
+        attachments: attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+        })),
+      });
+      return true;
+    } catch (e) {
+      console.error(`[email failed via smtp] ${subject}:`, e);
+      return false;
+    }
+  }
+
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.log(`[email skipped] ${subject} -> ${to.join(", ")}`);
+    return false;
+  }
+  const resend = new Resend(key);
   const { error } = await resend.emails.send({
     from: from(),
     to,
