@@ -70,7 +70,7 @@ export default function AlertsPage() {
           <CardContent className="px-0">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="[&_th]:text-[11px] [&_th]:font-medium [&_th]:tracking-wider [&_th]:uppercase">
                   <TableHead className="ps-6">Alert</TableHead>
                   <TableHead>Member</TableHead>
                   <TableHead className="pe-6 text-right">Sent</TableHead>

@@ -72,7 +72,9 @@ export default function SignupPage() {
         <div className="space-y-1.5">
           <Label htmlFor="name">Name</Label>
           <Input
+            className="h-10"
             id="name"
+            autoFocus
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -82,6 +84,7 @@ export default function SignupPage() {
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
+            className="h-10"
             id="email"
             type="email"
             required
@@ -93,6 +96,7 @@ export default function SignupPage() {
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input
+            className="h-10"
             id="password"
             type="password"
             required
@@ -103,7 +107,7 @@ export default function SignupPage() {
           />
         </div>
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <Button type="submit" className="w-full" disabled={busy || hasAccount === null}>
+        <Button type="submit" className="h-10 w-full" disabled={busy || hasAccount === null}>
           {busy ? "Creating…" : "Create account"}
         </Button>
       </form>

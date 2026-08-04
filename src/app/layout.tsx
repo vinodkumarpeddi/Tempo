@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Claude Team Usage",
-  description: "Session and weekly limit tracking for your team's Claude accounts",
+  title: "Headroom — Claude capacity for teams",
+  description: "Know who has Claude capacity left — session and weekly limits, reset dates, reports, and alerts.",
 };
 
 // Light by default; dark only when the user toggled it.

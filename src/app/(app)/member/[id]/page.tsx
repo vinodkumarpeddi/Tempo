@@ -43,37 +43,45 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
   }, [id, days]);
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-8">
-      <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ms-2 mb-4">
-        <Link href="/dashboard">
-          <ArrowLeft />
-          Team
-        </Link>
-      </Button>
-
+    <>
+      <div className="border-border/70 border-b">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-8 pt-6 pb-5">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ms-2">
+              <Link href="/dashboard">
+                <ArrowLeft />
+                Team
+              </Link>
+            </Button>
+            {data && (
+              <div className="flex items-center gap-3">
+                <MonogramAvatar name={data.user.name} className="size-10 text-sm" />
+                <div>
+                  <h1 className="text-lg leading-tight font-semibold tracking-tight">
+                    {data.user.name}
+                  </h1>
+                  <p className="text-muted-foreground text-xs">{data.user.email}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {data?.latest && (
+            <p className="text-muted-foreground text-xs">
+              last report{" "}
+              {new Date(data.latest.capturedAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          )}
+        </div>
+      </div>
+      <main className="w-full px-8 py-6">
       {error && <p className="mt-4 text-sm">Member not found.</p>}
       {data && (
         <>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <MonogramAvatar name={data.user.name} colorful className="size-11 text-sm" />
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">{data.user.name}</h1>
-                <p className="text-muted-foreground text-sm">{data.user.email}</p>
-              </div>
-            </div>
-            {data.latest && (
-              <p className="text-muted-foreground text-xs">
-                last report{" "}
-                {new Date(data.latest.capturedAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            )}
-          </div>
 
           {data.latest && (
             <div
@@ -133,6 +141,7 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
           </Card>
         </>
       )}
-    </main>
+      </main>
+    </>
   );
 }

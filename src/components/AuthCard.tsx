@@ -1,23 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, CalendarClock, Gauge, ShieldCheck } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const POINTS = [
-  { icon: Gauge, text: "Live session and weekly meters for every member" },
-  { icon: CalendarClock, text: "Reset countdowns with exact dates, always visible" },
-  { icon: BellRing, text: "Daily email reports and threshold alerts" },
-  { icon: ShieldCheck, text: "Tokens never leave member machines — only percentages" },
+  "Live capacity meters with reset dates for every member",
+  "Daily reports and threshold alerts by email",
+  "Tokens never leave member machines — only percentages",
 ];
 
 function Brand({ className = "" }: { className?: string }) {
   return (
     <Link href="/" className={`flex items-center gap-2.5 ${className}`}>
-      <span className="bg-sidebar-primary flex size-8 items-center justify-center rounded-lg">
-        <Gauge className="size-4.5 text-white" />
-      </span>
-      <span className="text-sm font-semibold tracking-tight">Claude Team Usage</span>
+      <Logo className="size-8" />
+      <span className="text-sm font-semibold tracking-tight">Headroom</span>
     </Link>
+  );
+}
+
+function PreviewCard() {
+  return (
+    <div className="border-sidebar-border bg-sidebar-accent/40 mt-10 w-full max-w-xs rounded-xl border p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <span className="bg-sidebar-accent flex size-7 items-center justify-center rounded-full text-[10px] font-semibold">
+            V
+          </span>
+          <span className="text-sm font-medium">Vinod</span>
+        </div>
+        <span className="border-sidebar-border inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
+          <span className="size-1.5 rounded-full bg-[var(--color-emerald-500)]" />
+          93% left
+        </span>
+      </div>
+      <div className="mt-4 space-y-3.5">
+        {(
+          [
+            ["Session", 24],
+            ["Weekly", 7],
+          ] as const
+        ).map(([label, pct]) => (
+          <div key={label}>
+            <div className="mb-1.5 flex justify-between text-[10px]">
+              <span className="text-sidebar-foreground/60 font-medium tracking-wider uppercase">
+                {label}
+              </span>
+              <span className="font-semibold tabular-nums">{pct}%</span>
+            </div>
+            <div className="bg-sidebar-accent h-1.5 overflow-hidden rounded-full">
+              <div
+                className="h-full rounded-full bg-[var(--color-emerald-500)]"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -34,25 +73,34 @@ export default function AuthCard({
 }) {
   return (
     <div className="flex min-h-dvh">
-      <aside className="bg-sidebar text-sidebar-foreground hidden w-[44%] max-w-xl flex-col justify-between p-10 lg:flex">
-        <Brand />
-        <div>
+      <aside className="bg-sidebar text-sidebar-foreground relative hidden w-[44%] max-w-xl flex-col justify-between overflow-hidden p-10 lg:flex">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(520px 340px at 88% 12%, color-mix(in oklch, var(--color-brand-500) 20%, transparent), transparent), radial-gradient(460px 340px at 8% 92%, color-mix(in oklch, var(--color-brand-700) 22%, transparent), transparent)",
+          }}
+        />
+        <Brand className="relative" />
+        <div className="relative">
           <h2 className="max-w-sm text-2xl font-semibold tracking-tight text-balance">
             Know who has Claude capacity before work stalls.
           </h2>
-          <ul className="mt-9 space-y-4">
+          <ul className="mt-8 space-y-3.5">
             {POINTS.map((p) => (
               <li
-                key={p.text}
+                key={p}
                 className="text-sidebar-foreground/75 flex items-start gap-3 text-sm leading-relaxed"
               >
-                <p.icon className="text-sidebar-primary mt-0.5 size-4 shrink-0" />
-                {p.text}
+                <span className="bg-sidebar-primary mt-1.5 size-1.5 shrink-0 rounded-full" />
+                {p}
               </li>
             ))}
           </ul>
+          <PreviewCard />
         </div>
-        <p className="text-sidebar-foreground/45 text-xs">
+        <p className="text-sidebar-foreground/45 relative text-xs">
           Self-hosted &middot; your usage data stays on your server
         </p>
       </aside>

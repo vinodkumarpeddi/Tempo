@@ -50,7 +50,9 @@ export default function LoginPage() {
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
+            className="h-10"
             id="email"
+            autoFocus
             type="email"
             required
             value={email}
@@ -61,6 +63,7 @@ export default function LoginPage() {
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input
+            className="h-10"
             id="password"
             type="password"
             required
@@ -70,7 +73,7 @@ export default function LoginPage() {
           />
         </div>
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" className="h-10 w-full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>

@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import PageHeader from "@/components/PageHeader";
 
@@ -234,14 +233,19 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <Separator className="my-6" />
-
-          <div className="flex gap-3">
-            <Button onClick={save}>Save settings</Button>
-            <Button variant="outline" onClick={sendTest}>
-              <Send />
-              Send test report now
-            </Button>
+          <div className="border-border/70 bg-muted/40 -mx-6 -mb-6 mt-6 flex items-center justify-between gap-3 rounded-b-xl border-t px-6 py-3">
+            <p className="text-muted-foreground text-xs">
+              Changes apply immediately after saving.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={sendTest}>
+                <Send />
+                Send test report
+              </Button>
+              <Button size="sm" onClick={save}>
+                Save settings
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

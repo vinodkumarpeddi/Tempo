@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   BellRing,
   BookOpen,
-  Gauge,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import Logo from "@/components/Logo";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: ["/dashboard", "/member"] },
@@ -57,13 +57,12 @@ export default function AppShell({
     <div className="bg-sidebar flex min-h-dvh">
       <aside className="text-sidebar-foreground sticky top-0 flex h-dvh w-60 shrink-0 flex-col px-3 py-4 max-md:hidden">
         <Link href="/dashboard" className="mb-6 flex items-center gap-2.5 px-2">
-          <span className="bg-sidebar-primary flex size-8 items-center justify-center rounded-lg">
-            <Gauge className="size-4.5 text-white" />
-          </span>
-          <span className="text-sm leading-tight font-semibold">
-            Claude
-            <br />
-            Team Usage
+          <Logo className="size-8" />
+          <span className="leading-tight">
+            <span className="block text-sm font-semibold tracking-tight">Headroom</span>
+            <span className="text-sidebar-foreground/55 block text-[10px] font-medium tracking-wider uppercase">
+              Claude capacity
+            </span>
           </span>
         </Link>
 

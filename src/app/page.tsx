@@ -10,6 +10,7 @@ import {
   TimerReset,
 } from "lucide-react";
 import { getSessionAccount } from "@/lib/session";
+import Logo from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -57,10 +58,8 @@ export default async function LandingPage() {
       <header className="border-border/60 bg-background/80 sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
-            <span className="bg-primary flex size-7 items-center justify-center rounded-lg">
-              <Gauge className="size-4 text-white" />
-            </span>
-            <span className="text-sm font-semibold tracking-tight">Claude Team Usage</span>
+            <Logo className="size-7" />
+            <span className="text-sm font-semibold tracking-tight">Headroom</span>
           </div>
           <nav className="flex items-center gap-2">
             <Link
@@ -87,6 +86,16 @@ export default async function LandingPage() {
             style={{
               background:
                 "radial-gradient(600px 280px at 50% -40px, color-mix(in oklch, var(--color-brand-400) 14%, transparent), transparent)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{
+              backgroundImage:
+                "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
+              backgroundSize: "56px 56px",
+              maskImage: "radial-gradient(640px 420px at 50% 0%, black, transparent)",
             }}
           />
           <div className="relative mx-auto w-full max-w-6xl px-6 pt-20 pb-16 text-center">
@@ -126,7 +135,7 @@ export default async function LandingPage() {
                 <span className="size-2.5 rounded-full bg-[#febc2e]" />
                 <span className="size-2.5 rounded-full bg-[#28c840]" />
                 <span className="text-sidebar-foreground/50 ms-3 text-[11px]">
-                  claude-team-usage — dashboard
+                  headroom — dashboard
                 </span>
               </div>
               <div className="bg-background grid gap-3 rounded-b-xl p-4 text-start sm:grid-cols-3">
@@ -170,7 +179,7 @@ export default async function LandingPage() {
           <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="border-border bg-card rounded-xl border p-5">
-                <span className="bg-brand-50 text-brand-700 dark:bg-sidebar-accent dark:text-brand-300 mb-3 flex size-9 items-center justify-center rounded-lg">
+                <span className="border-border bg-secondary/60 text-foreground mb-3 flex size-9 items-center justify-center rounded-lg border">
                   <f.icon className="size-4.5" />
                 </span>
                 <h3 className="text-sm font-semibold">{f.title}</h3>
@@ -223,7 +232,10 @@ export default async function LandingPage() {
 
       <footer className="border-border/60 border-t">
         <div className="text-muted-foreground mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 text-xs">
-          <span>Claude Team Usage</span>
+          <span className="flex items-center gap-2">
+            <Logo className="size-5" rounded="rounded-md" />
+            Headroom — Claude capacity for teams
+          </span>
           <span>Self-hosted · your data stays yours</span>
         </div>
       </footer>
