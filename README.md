@@ -29,8 +29,16 @@ dev machine (each member)              server (this app)                 email
   window resets are emailed immediately, deduped per window via `AlertLog`.
 - The daily report is sent by `/api/cron/daily` at the configured UTC hour, as an
   inline HTML table or a PDF attachment (admin setting).
+- **Single-admin auth**: the public landing page is at `/`; `/signup` creates the
+  one admin account (blocked once it exists), `/login` signs in, and every
+  dashboard page and data API requires the session cookie (scrypt password
+  hashes, DB-backed sessions, httpOnly cookie). `ADMIN_SECRET` still works as a
+  header for scripts; `CRON_SECRET` covers the cron endpoint.
+- In-app **Setup guide** (`/setup`) walks through onboarding members, installing
+  collectors, and wiring email.
 - UI is built on the EverHr design system (components copied into
-  `src/components/ui`, tokens in `src/app/globals.css`).
+  `src/components/ui`, tokens in `src/app/globals.css`) with an EverHr-style
+  sidebar shell.
 
 > ⚠️ The usage endpoint is **undocumented** — Anthropic may change it. The
 > tolerant parser (`src/lib/usage.ts`) falls back to the `limits` array, stores
@@ -56,9 +64,15 @@ Configure `.env` (see `.env.example`):
 | `EMAIL_FROM` | e.g. `Claude Usage <usage@yourdomain.com>` (domain verified in Resend). |
 | `APP_URL` | Public URL, linked in emails. |
 
+## First run
+
+1. Start the app and open `/signup` — create the admin account (one per
+   workspace; signup locks afterwards).
+2. Follow the in-app **Setup guide**.
+
 ## Onboarding a team member
 
-1. Open `/admin` → **Add member** (name + email).
+1. Open `/members` → **Add member** (name + email).
 2. Copy their install command and send it to them:
    ```sh
    curl -sSL https://your-server/install.sh | bash -s -- https://your-server ctu_xxx

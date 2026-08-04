@@ -25,6 +25,13 @@ export function isAdmin(req: NextRequest) {
   );
 }
 
+/** Session cookie (the admin's browser) or ADMIN_SECRET (scripts). */
+export async function isAuthed(req: NextRequest) {
+  if (isAdmin(req)) return true;
+  const { accountFromRequest } = await import("./session");
+  return (await accountFromRequest(req)) !== null;
+}
+
 export function isCron(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;

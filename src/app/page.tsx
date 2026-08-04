@@ -1,247 +1,232 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
+  ArrowRight,
+  BellRing,
   CalendarClock,
-  ChevronRight,
   Gauge,
-  TriangleAlert,
-  Users,
+  Lock,
+  Mail,
+  TimerReset,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { Separator } from "@/components/ui/separator";
-import Meter, { fmtCountdown, fmtResetDate } from "@/components/Meter";
+import { getSessionAccount } from "@/lib/session";
 
-type Member = {
-  id: string;
-  name: string;
-  email: string;
-  stale: boolean;
-  snapshot: {
-    fiveHourPct: number;
-    fiveHourResetsAt: string;
-    sevenDayPct: number;
-    sevenDayResetsAt: string;
-    capturedAt: string;
-  } | null;
-};
+export const dynamic = "force-dynamic";
 
-type TeamResponse = {
-  thresholds: { warn: number; critical: number };
-  members: Member[];
-};
+const FEATURES = [
+  {
+    icon: Gauge,
+    title: "Live limit meters",
+    text: "Session (5-hour) and weekly utilization for every member, with reset countdowns and exact reset dates.",
+  },
+  {
+    icon: Lock,
+    title: "Tokens stay local",
+    text: "A tiny collector on each machine reads the Claude Code token locally and reports only percentages.",
+  },
+  {
+    icon: Mail,
+    title: "Daily email reports",
+    text: "A team digest every day at the hour you choose — inline table or PDF attachment, powered by Resend.",
+  },
+  {
+    icon: BellRing,
+    title: "Threshold & reset alerts",
+    text: "Members get warned at 80% and 95%, and notified the moment a weekly window resets.",
+  },
+];
 
-function StatTile({
-  icon,
-  label,
-  value,
-  hint,
-  tone = "brand",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: "brand" | "amber";
-}) {
-  const chip =
-    tone === "amber"
-      ? "bg-[color-mix(in_oklch,var(--color-amber-500)_12%,transparent)] text-[var(--color-amber-700)] dark:text-[var(--color-amber-400)]"
-      : "bg-brand-50 text-brand-700 dark:bg-[color-mix(in_oklch,var(--color-brand-500)_15%,transparent)] dark:text-brand-300";
-  return (
-    <div className="bg-card flex items-start gap-3.5 rounded-xl border p-4">
-      <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${chip}`}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <div className="text-muted-foreground text-xs font-medium">{label}</div>
-        <div className="mt-0.5 text-2xl font-semibold tracking-tight">{value}</div>
-        {hint && <div className="text-muted-foreground mt-0.5 truncate text-xs">{hint}</div>}
-      </div>
-    </div>
-  );
+const MOCK = [
+  { name: "Arjun", initial: "A", session: 97, weekly: 86 },
+  { name: "Priya", initial: "P", session: 62, weekly: 41 },
+  { name: "Vinod", initial: "V", session: 14, weekly: 5 },
+];
+
+function barColor(pct: number) {
+  if (pct >= 95) return "var(--color-rose-500)";
+  if (pct >= 80) return "var(--color-amber-500)";
+  return "var(--color-emerald-500)";
 }
 
-export default function TeamPage() {
-  const [data, setData] = useState<TeamResponse | null>(null);
-  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      fetch("/api/team")
-        .then((r) => r.json())
-        .then((d) => {
-          if (!alive) return;
-          setData(d);
-          setUpdatedAt(new Date());
-        })
-        .catch(() => alive && setError(true));
-    load();
-    const t = setInterval(load, 60_000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-  }, []);
-
-  const stats = useMemo(() => {
-    if (!data) return null;
-    const reporting = data.members.filter((m) => m.snapshot);
-    const avgWeekly = reporting.length
-      ? reporting.reduce((s, m) => s + m.snapshot!.sevenDayPct, 0) / reporting.length
-      : 0;
-    const atRisk = reporting.filter(
-      (m) =>
-        m.snapshot!.sevenDayPct >= data.thresholds.warn ||
-        m.snapshot!.fiveHourPct >= data.thresholds.warn,
-    );
-    const nextReset = reporting.length
-      ? reporting.reduce((min, m) =>
-          new Date(m.snapshot!.sevenDayResetsAt) < new Date(min.snapshot!.sevenDayResetsAt)
-            ? m
-            : min,
-        )
-      : null;
-    return { reporting, avgWeekly, atRisk, nextReset };
-  }, [data]);
+export default async function LandingPage() {
+  const account = await getSessionAccount();
+  if (account) redirect("/dashboard");
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Team usage</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Session (5-hour) and weekly limits across the team
-          </p>
-        </div>
-        {updatedAt && (
-          <p className="text-muted-foreground text-xs">
-            Updated{" "}
-            {updatedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} ·
-            refreshes every minute
-          </p>
-        )}
-      </div>
-
-      {error && <p className="text-sm">Failed to load team data.</p>}
-
-      {data && stats && data.members.length > 0 && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatTile
-            icon={<Users className="size-4" />}
-            label="Members"
-            value={String(data.members.length)}
-            hint={`${stats.reporting.length} reporting`}
-          />
-          <StatTile
-            icon={<Gauge className="size-4" />}
-            label="Avg weekly used"
-            value={`${stats.avgWeekly.toFixed(0)}%`}
-            hint={`warn at ${data.thresholds.warn}%, critical at ${data.thresholds.critical}%`}
-          />
-          <StatTile
-            icon={<TriangleAlert className="size-4" />}
-            label="Near limits"
-            value={String(stats.atRisk.length)}
-            hint={
-              stats.atRisk.length
-                ? stats.atRisk.map((m) => m.name).join(", ")
-                : "everyone in the clear"
-            }
-            tone={stats.atRisk.length ? "amber" : "brand"}
-          />
-          <StatTile
-            icon={<CalendarClock className="size-4" />}
-            label="Next weekly reset"
-            value={
-              stats.nextReset ? fmtCountdown(stats.nextReset.snapshot!.sevenDayResetsAt) : "—"
-            }
-            hint={
-              stats.nextReset
-                ? `${stats.nextReset.name} · ${fmtResetDate(stats.nextReset.snapshot!.sevenDayResetsAt)}`
-                : undefined
-            }
-          />
-        </div>
-      )}
-
-      {data && data.members.length === 0 && (
-        <EmptyState
-          title="No members yet"
-          description="Add your team in Admin — each member gets a one-line install command for their machine."
-          action={
-            <Link href="/admin" className="text-primary text-sm font-medium hover:underline">
-              Open Admin →
+    <div className="flex min-h-dvh flex-col">
+      <header className="border-border/60 bg-background/80 sticky top-0 z-10 border-b backdrop-blur">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="bg-primary flex size-7 items-center justify-center rounded-lg">
+              <Gauge className="size-4 text-white" />
+            </span>
+            <span className="text-sm font-semibold tracking-tight">Claude Team Usage</span>
+          </div>
+          <nav className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="text-muted-foreground hover:text-foreground rounded-md px-3 py-1.5 text-sm transition-colors"
+            >
+              Log in
             </Link>
-          }
-        />
-      )}
+            <Link
+              href="/signup"
+              className="bg-primary text-primary-foreground hover:bg-brand-700 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors"
+            >
+              Get started
+            </Link>
+          </nav>
+        </div>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {data?.members.map((m) => (
-          <Link
-            key={m.id}
-            href={`/member/${m.id}`}
-            className="group bg-card hover:border-ring/40 rounded-xl border p-5 transition-colors hover:shadow-sm"
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <MonogramAvatar name={m.name} colorful className="size-10 text-sm" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium">{m.name}</span>
-                  {m.stale && (
-                    <Badge
-                      variant="outline"
-                      className="text-muted-foreground text-[10px]"
-                      title="No recent report from this machine"
-                    >
-                      stale
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-muted-foreground truncate text-xs">{m.email}</div>
-              </div>
-              <ChevronRight className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 transition-colors" />
+      <main className="flex-1">
+        <section className="relative overflow-hidden">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(600px 280px at 50% -40px, color-mix(in oklch, var(--color-brand-400) 14%, transparent), transparent)",
+            }}
+          />
+          <div className="relative mx-auto w-full max-w-6xl px-6 pt-20 pb-16 text-center">
+            <div className="border-border bg-card text-muted-foreground mx-auto mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-medium">
+              <span className="bg-[var(--color-emerald-500)] size-1.5 rounded-full" />
+              Session &amp; weekly limits, tracked live
+            </div>
+            <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tighter text-balance sm:text-6xl">
+              Know your team&apos;s Claude limits{" "}
+              <span className="from-brand-500 to-brand-700 bg-gradient-to-r bg-clip-text text-transparent">
+                before they hit them
+              </span>
+            </h1>
+            <p className="text-muted-foreground mx-auto mt-5 max-w-xl text-lg text-balance">
+              One dashboard for every member&apos;s session and weekly usage, reset dates,
+              daily email reports, and limit alerts.
+            </p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <Link
+                href="/signup"
+                className="bg-primary text-primary-foreground hover:bg-brand-700 inline-flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
+              >
+                Get started
+                <ArrowRight className="size-4" />
+              </Link>
+              <Link
+                href="/setup"
+                className="border-border bg-card hover:bg-accent inline-flex items-center rounded-lg border px-5 py-2.5 text-sm font-medium transition-colors"
+              >
+                How it works
+              </Link>
             </div>
 
-            {m.snapshot ? (
-              <div className="space-y-4">
-                <Meter
-                  label="Session · 5 hour"
-                  pct={m.snapshot.fiveHourPct}
-                  resetsAt={m.snapshot.fiveHourResetsAt}
-                  warn={data.thresholds.warn}
-                  critical={data.thresholds.critical}
-                />
-                <Separator />
-                <Meter
-                  label="Weekly"
-                  pct={m.snapshot.sevenDayPct}
-                  resetsAt={m.snapshot.sevenDayResetsAt}
-                  warn={data.thresholds.warn}
-                  critical={data.thresholds.critical}
-                />
-                <div className="text-muted-foreground/80 pt-1 text-[11px]">
-                  last report{" "}
-                  {new Date(m.snapshot.capturedAt).toLocaleTimeString(undefined, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
+            <div className="border-border bg-card mx-auto mt-14 max-w-4xl rounded-2xl border p-2 shadow-[0_20px_60px_-30px_rgb(0_0_0/0.25)]">
+              <div className="bg-sidebar flex items-center gap-1.5 rounded-t-xl px-4 py-2.5">
+                <span className="size-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="size-2.5 rounded-full bg-[#febc2e]" />
+                <span className="size-2.5 rounded-full bg-[#28c840]" />
+                <span className="text-sidebar-foreground/50 ms-3 text-[11px]">
+                  claude-team-usage — dashboard
+                </span>
               </div>
-            ) : (
-              <p className="text-muted-foreground py-6 text-center text-sm">
-                no data reported yet
-              </p>
-            )}
-          </Link>
-        ))}
-      </div>
-    </main>
+              <div className="bg-background grid gap-3 rounded-b-xl p-4 text-start sm:grid-cols-3">
+                {MOCK.map((m) => (
+                  <div key={m.name} className="border-border bg-card rounded-xl border p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="bg-secondary text-foreground flex size-7 items-center justify-center rounded-full text-xs font-semibold">
+                        {m.initial}
+                      </span>
+                      <span className="text-sm font-medium">{m.name}</span>
+                    </div>
+                    {(
+                      [
+                        ["Session", m.session],
+                        ["Weekly", m.weekly],
+                      ] as const
+                    ).map(([label, pct]) => (
+                      <div key={label} className="mb-2.5 last:mb-0">
+                        <div className="mb-1 flex justify-between text-[10px]">
+                          <span className="text-muted-foreground font-medium tracking-wider uppercase">
+                            {label}
+                          </span>
+                          <span className="font-semibold tabular-nums">{pct}%</span>
+                        </div>
+                        <div className="bg-secondary h-1.5 overflow-hidden rounded-full">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${pct}%`, background: barColor(pct) }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-border/60 border-t">
+          <div className="mx-auto grid w-full max-w-6xl gap-4 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="border-border bg-card rounded-xl border p-5">
+                <span className="bg-brand-50 text-brand-700 dark:bg-sidebar-accent dark:text-brand-300 mb-3 flex size-9 items-center justify-center rounded-lg">
+                  <f.icon className="size-4.5" />
+                </span>
+                <h3 className="text-sm font-semibold">{f.title}</h3>
+                <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{f.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="border-border/60 border-t">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16">
+            <h2 className="text-center text-2xl font-semibold tracking-tight">
+              Running in three steps
+            </h2>
+            <div className="mt-10 grid gap-8 sm:grid-cols-3">
+              {[
+                {
+                  icon: Gauge,
+                  step: "01",
+                  title: "Create the admin account",
+                  text: "One login owns the workspace — dashboards, members, and settings are only visible to you.",
+                },
+                {
+                  icon: TimerReset,
+                  step: "02",
+                  title: "Install the collector",
+                  text: "Each member runs a one-line installer. It reports usage on the interval you configure.",
+                },
+                {
+                  icon: CalendarClock,
+                  step: "03",
+                  title: "Watch limits & get reports",
+                  text: "Live meters with reset dates, a daily digest by email, and alerts before anyone hits a wall.",
+                },
+              ].map((s) => (
+                <div key={s.step} className="text-center">
+                  <div className="text-muted-foreground/60 text-xs font-semibold tracking-widest">
+                    {s.step}
+                  </div>
+                  <h3 className="mt-2 text-sm font-semibold">{s.title}</h3>
+                  <p className="text-muted-foreground mx-auto mt-1.5 max-w-xs text-sm leading-relaxed">
+                    {s.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-border/60 border-t">
+        <div className="text-muted-foreground mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 text-xs">
+          <span>Claude Team Usage</span>
+          <span>Self-hosted · your data stays yours</span>
+        </div>
+      </footer>
+    </div>
   );
 }

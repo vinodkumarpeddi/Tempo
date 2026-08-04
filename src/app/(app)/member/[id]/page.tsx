@@ -44,7 +44,7 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-8">
       <Button variant="ghost" size="sm" asChild className="text-muted-foreground -ms-2 mb-4">
-        <Link href="/">
+        <Link href="/dashboard">
           <ArrowLeft />
           Team
         </Link>

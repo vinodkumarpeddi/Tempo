@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { isAdmin, newIngestKey } from "@/lib/auth";
+import { isAuthed, newIngestKey } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Params) {
-  if (!isAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await isAuthed(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
 
@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!isAdmin(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!(await isAuthed(req))) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   try {
     await prisma.user.delete({ where: { id } });

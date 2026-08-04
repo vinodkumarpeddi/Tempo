@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSettings, prisma } from "@/lib/db";
+import { isAuthed } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await isAuthed(req)))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const [users, settings] = await Promise.all([
     prisma.user.findMany({
       where: { active: true },

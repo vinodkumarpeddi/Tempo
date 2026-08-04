@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, prisma } from "@/lib/db";
+import { isAuthed } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await isAuthed(req)))
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const days = Math.min(
     30,

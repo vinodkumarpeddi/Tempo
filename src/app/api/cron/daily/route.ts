@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getSettings, prisma } from "@/lib/db";
-import { isAdmin, isCron } from "@/lib/auth";
+import { isAuthed, isCron } from "@/lib/auth";
 import { Attachment, barCell, emailShell, fmtReset, sendEmail } from "@/lib/email";
 import { buildUsagePdf } from "@/lib/pdf";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 // configured UTC hour and at most once per day. `?force=1` bypasses both
 // checks for testing.
 export async function GET(req: NextRequest) {
-  if (!isCron(req) && !isAdmin(req))
+  if (!isCron(req) && !(await isAuthed(req)))
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const force = req.nextUrl.searchParams.get("force") === "1";
 
