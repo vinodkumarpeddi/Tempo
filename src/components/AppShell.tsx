@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  BellRing,
   BookOpen,
   Gauge,
   LayoutDashboard,
@@ -19,6 +20,7 @@ import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: ["/dashboard", "/member"] },
   { href: "/members", label: "Members", icon: Users, match: ["/members"] },
+  { href: "/alerts", label: "Alerts", icon: BellRing, match: ["/alerts"] },
   { href: "/settings", label: "Settings", icon: Settings, match: ["/settings"] },
   { href: "/setup", label: "Setup guide", icon: BookOpen, match: ["/setup"] },
 ];

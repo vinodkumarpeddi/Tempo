@@ -46,6 +46,10 @@ export async function GET(req: NextRequest) {
           .slice()
           .reverse()
           .map((x) => x.sevenDayPct),
+        sparkAt: u.snapshots
+          .slice()
+          .reverse()
+          .map((x) => x.capturedAt),
         stale: s ? Date.now() - s.capturedAt.getTime() > staleMs : true,
       };
     }),
