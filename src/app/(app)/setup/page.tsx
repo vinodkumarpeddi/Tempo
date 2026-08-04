@@ -51,25 +51,25 @@ export default function SetupPage() {
           </CardHeader>
         </Card>
 
-        <Step n="1" title="Add a member">
+        <Step n="1" title="Share the team install command">
           <p>
-            On the{" "}
+            Copy the <b>team install command</b> from the top of the{" "}
             <Link href="/members" className="text-primary font-medium underline underline-offset-4">
               Members
             </Link>{" "}
-            page, add their name and email.
+            page and drop it in your team chat. It&apos;s the same command for everyone.
           </p>
         </Step>
 
-        <Step n="2" title="Send them their install command">
+        <Step n="2" title="Everyone runs it once">
           <p>
-            Open the <b>⋯ menu</b> on their row and choose <b>Copy install command</b>. They
-            paste it into a terminal on the machine where they use Claude Code — that&apos;s all
-            they ever do.
+            Each person pastes it into a terminal on the machine where they use Claude Code.
+            It detects their Claude account automatically — they appear on the dashboard after
+            their first report, no setup on your side.
           </p>
           <p className="text-xs">
             macOS shows a one-time Keychain prompt for &quot;Claude Code-credentials&quot; →
-            click <b>Always Allow</b>. Reporting starts immediately and survives restarts.
+            click <b>Always Allow</b>. Reporting survives restarts.
           </p>
         </Step>
 

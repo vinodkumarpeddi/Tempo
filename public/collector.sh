@@ -14,8 +14,15 @@ CONFIG_FILE="$CONFIG_DIR/config"
 
 [ -n "${SERVER_URL:-}" ] && [ -n "${INGEST_KEY:-}" ] || { echo "config missing SERVER_URL/INGEST_KEY" >&2; exit 1; }
 
+# Member identity headers (set by the installer; lets one shared team key
+# serve everyone).
+ID_HEADERS=()
+if [ -n "${MEMBER_EMAIL:-}" ]; then
+  ID_HEADERS=(-H "x-member-email: $MEMBER_EMAIL" -H "x-member-name: ${MEMBER_NAME:-}")
+fi
+
 # 1. Ask the server whether a report is due (admin controls the interval).
-cfg=$(curl -sf --max-time 15 -H "Authorization: Bearer $INGEST_KEY" "$SERVER_URL/api/collector/config") || exit 0
+cfg=$(curl -sf --max-time 15 -H "Authorization: Bearer $INGEST_KEY" "${ID_HEADERS[@]}" "$SERVER_URL/api/collector/config") || exit 0
 case "$cfg" in
   *'"reportDue":true'*) ;;
   *) exit 0 ;;
@@ -52,5 +59,6 @@ esac
 curl -sf --max-time 15 -X POST \
   -H "Authorization: Bearer $INGEST_KEY" \
   -H "Content-Type: application/json" \
+  "${ID_HEADERS[@]}" \
   --data "$usage" \
   "$SERVER_URL/api/ingest" >/dev/null || echo "report failed" >&2

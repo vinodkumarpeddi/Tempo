@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSettings, prisma } from "@/lib/db";
-import { userFromIngestKey } from "@/lib/auth";
+import { resolveCollectorUser } from "@/lib/auth";
 import { parseUsage } from "@/lib/usage";
 import { evaluateAlerts } from "@/lib/alerts";
 
 export async function POST(req: NextRequest) {
-  const user = await userFromIngestKey(req);
-  if (!user || !user.active) {
-    return NextResponse.json({ error: "invalid ingest key" }, { status: 401 });
+  const { user, teamAuthed } = await resolveCollectorUser(req, { autoCreate: true });
+  if (!user) {
+    return NextResponse.json(
+      { error: teamAuthed ? "member email required" : "invalid ingest key" },
+      { status: teamAuthed ? 400 : 401 },
+    );
+  }
+  if (!user.active) {
+    return NextResponse.json({ error: "member is disabled" }, { status: 403 });
   }
 
   let raw: unknown;
