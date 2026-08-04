@@ -27,12 +27,17 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   if (!force) {
-    if (now.getUTCHours() !== settings.digestHourUtc) {
-      return NextResponse.json({ sent: false, reason: "not digest hour" });
+    const hours = (settings.digestHours || String(settings.digestHourUtc))
+      .split(",")
+      .map((h) => parseInt(h, 10))
+      .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
+    if (!hours.includes(now.getUTCHours())) {
+      return NextResponse.json({ sent: false, reason: "not a configured report hour" });
     }
+    // One send per configured hour: dedupe on the day+hour slot.
     const last = settings.lastDigestAt;
-    if (last && last.toISOString().slice(0, 10) === now.toISOString().slice(0, 10)) {
-      return NextResponse.json({ sent: false, reason: "already sent today" });
+    if (last && last.toISOString().slice(0, 13) === now.toISOString().slice(0, 13)) {
+      return NextResponse.json({ sent: false, reason: "already sent this slot" });
     }
   }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Send } from "lucide-react";
+import { Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,7 @@ import PageHeader from "@/components/PageHeader";
 
 type AdminSettings = {
   collectIntervalMin: number;
-  digestHourUtc: number;
+  digestHours: string;
   warnThreshold: number;
   criticalThreshold: number;
   adminEmail: string;
@@ -88,12 +88,23 @@ export default function SettingsPage() {
     });
   }, [router]);
 
+  const hours = (settings?.digestHours ?? "")
+    .split(",")
+    .map((h) => parseInt(h, 10))
+    .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
+
+  const setHours = (next: number[]) =>
+    settings &&
+    setSettings({ ...settings, digestHours: [...new Set(next)].sort((a, b) => a - b).join(",") });
+  const addHour = (h: number) => setHours([...hours, h]);
+  const removeHour = (h: number) => hours.length > 1 && setHours(hours.filter((x) => x !== h));
+
   const save = async () => {
     if (!settings) return;
     const res = await fetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
+      body: JSON.stringify({ ...settings, digestHours: hours }),
     });
     setStatus(res.ok ? "Settings saved" : "Failed to save settings");
   };
@@ -164,22 +175,47 @@ export default function SettingsPage() {
               onCheckedChange={(v) => setSettings({ ...settings, digestEnabled: v })}
             />
           </Row>
-          <Row label="Send at" desc="Once per day, at this UTC hour.">
-            <Select
-              value={String(settings.digestHourUtc)}
-              onValueChange={(v) => setSettings({ ...settings, digestHourUtc: Number(v) })}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 24 }, (_, h) => (
-                  <SelectItem key={h} value={String(h)}>
-                    {String(h).padStart(2, "0")}:00 UTC
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Row
+            label="Send at"
+            desc="As many times per day as you need — one report goes out at each hour (UTC)."
+          >
+            <div className="flex max-w-xs flex-wrap items-center justify-end gap-1.5">
+              {hours.map((h) => (
+                <span
+                  key={h}
+                  className="border-border bg-secondary/60 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium tabular-nums"
+                >
+                  {String(h).padStart(2, "0")}:00
+                  <button
+                    onClick={() => removeHour(h)}
+                    disabled={hours.length === 1}
+                    aria-label={`Remove ${h}:00`}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+              {hours.length < 6 && (
+                <Select value="" onValueChange={(v) => addHour(Number(v))}>
+                  <SelectTrigger className="h-7 w-[4.6rem] px-2 text-xs">
+                    <span className="inline-flex items-center gap-1">
+                      <Plus className="size-3" />
+                      Add
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, h) => h)
+                      .filter((h) => !hours.includes(h))
+                      .map((h) => (
+                        <SelectItem key={h} value={String(h)}>
+                          {String(h).padStart(2, "0")}:00 UTC
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </Row>
           <Row label="Format">
             <Select

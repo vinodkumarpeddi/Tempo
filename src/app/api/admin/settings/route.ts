@@ -18,8 +18,16 @@ export async function PUT(req: NextRequest) {
   const data: Record<string, number | string | boolean> = {};
   if (ALLOWED_INTERVALS.includes(body.collectIntervalMin))
     data.collectIntervalMin = body.collectIntervalMin;
-  if (Number.isInteger(body.digestHourUtc) && body.digestHourUtc >= 0 && body.digestHourUtc <= 23)
-    data.digestHourUtc = body.digestHourUtc;
+  if (
+    Array.isArray(body.digestHours) &&
+    body.digestHours.length >= 1 &&
+    body.digestHours.length <= 6 &&
+    body.digestHours.every((h: unknown) => Number.isInteger(h) && (h as number) >= 0 && (h as number) <= 23)
+  ) {
+    data.digestHours = [...new Set(body.digestHours as number[])]
+      .sort((a, b) => a - b)
+      .join(",");
+  }
   if (Number.isInteger(body.warnThreshold) && body.warnThreshold > 0 && body.warnThreshold < 100)
     data.warnThreshold = body.warnThreshold;
   if (Number.isInteger(body.criticalThreshold) && body.criticalThreshold > 0 && body.criticalThreshold <= 100)

@@ -53,7 +53,8 @@ model Snapshot {
 model Settings {
   id                 Int    @id @default(1)
   collectIntervalMin Int    @default(30)
-  digestHourUtc      Int    @default(9)
+  digestHourUtc      Int    @default(9) // legacy, superseded by digestHours
+  digestHours        String @default("9")  // comma-separated UTC hours
   warnThreshold      Int    @default(80)
   criticalThreshold  Int    @default(95)
   adminEmail         String @default("")
