@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import HistoryChart, { HistoryPoint } from "@/components/HistoryChart";
-import Meter from "@/components/Meter";
+import RingGauge from "@/components/RingGauge";
 
 type HistoryResponse = {
   user: { id: string; name: string; email: string };
@@ -85,36 +85,31 @@ export default function MemberPage({ params }: PageProps<"/member/[id]">) {
 
           {data.latest && (
             <div
-              className={`mb-4 grid gap-4 sm:grid-cols-2 ${data.scoped.length > 0 ? "lg:grid-cols-3" : ""}`}
+              className={`mb-4 grid gap-4 sm:grid-cols-2 ${data.scoped.length > 0 ? "xl:grid-cols-3" : ""}`}
             >
-              <div className="bg-card rounded-xl border p-5">
-                <Meter
-                  label="Session · 5 hour"
-                  pct={data.latest.fiveHourPct}
-                  resetsAt={data.latest.fiveHourResetsAt}
-                  warn={data.thresholds.warn}
-                  critical={data.thresholds.critical}
-                />
-              </div>
-              <div className="bg-card rounded-xl border p-5">
-                <Meter
-                  label="Weekly"
-                  pct={data.latest.sevenDayPct}
-                  resetsAt={data.latest.sevenDayResetsAt}
-                  warn={data.thresholds.warn}
-                  critical={data.thresholds.critical}
-                />
-              </div>
+              <RingGauge
+                label="Session · 5 hour"
+                pct={data.latest.fiveHourPct}
+                resetsAt={data.latest.fiveHourResetsAt}
+                warn={data.thresholds.warn}
+                critical={data.thresholds.critical}
+              />
+              <RingGauge
+                label="Weekly"
+                pct={data.latest.sevenDayPct}
+                resetsAt={data.latest.sevenDayResetsAt}
+                warn={data.thresholds.warn}
+                critical={data.thresholds.critical}
+              />
               {data.scoped.map((sc) => (
-                <div key={sc.label} className="bg-card rounded-xl border p-5">
-                  <Meter
-                    label={`Weekly · ${sc.label}`}
-                    pct={sc.pct}
-                    resetsAt={sc.resetsAt}
-                    warn={data.thresholds.warn}
-                    critical={data.thresholds.critical}
-                  />
-                </div>
+                <RingGauge
+                  key={sc.label}
+                  label={`Weekly · ${sc.label}`}
+                  pct={sc.pct}
+                  resetsAt={sc.resetsAt}
+                  warn={data.thresholds.warn}
+                  critical={data.thresholds.critical}
+                />
               ))}
             </div>
           )}

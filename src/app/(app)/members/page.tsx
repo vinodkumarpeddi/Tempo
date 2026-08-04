@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
 import PageHeader from "@/components/PageHeader";
-import CopyBlock from "@/components/CopyBlock";
 import {
   Table,
   TableBody,
@@ -35,19 +34,14 @@ type AdminUser = {
 export default function MembersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [teamKey, setTeamKey] = useState("");
   const [status, setStatus] = useState("");
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
   const load = useCallback(async () => {
-    const [res, sRes] = await Promise.all([
-      fetch("/api/admin/users"),
-      fetch("/api/admin/settings"),
-    ]);
+    const res = await fetch("/api/admin/users");
     if (res.status === 401) return router.push("/login");
     if (res.ok) setUsers((await res.json()).users);
-    if (sRes.ok) setTeamKey((await sRes.json()).settings.teamKey ?? "");
   }, [router]);
 
   useEffect(() => {
@@ -94,24 +88,6 @@ export default function MembersPage() {
     <>
       <PageHeader title="Members" description="Everyone whose Claude usage is tracked in this workspace">{status && <p className="text-muted-foreground text-sm">{status}</p>}</PageHeader>
       <main className="w-full px-8 py-6">
-
-      {teamKey && (
-        <div className="bg-card mb-6 rounded-lg border p-5">
-          <div className="mb-1 flex items-center gap-2">
-            <h2 className="text-sm font-semibold">Team install command</h2>
-            <span className="border-border text-muted-foreground rounded-full border px-2 py-0.5 text-[10px] font-medium">
-              one command for everyone
-            </span>
-          </div>
-          <p className="text-muted-foreground mb-3 text-sm">
-            Share this once — it detects each person&apos;s Claude account automatically, and
-            they appear here after their first report.
-          </p>
-          <CopyBlock
-            text={`curl -sSL ${typeof window !== "undefined" ? window.location.origin : ""}/install.sh | bash -s -- ${typeof window !== "undefined" ? window.location.origin : ""} ${teamKey}`}
-          />
-        </div>
-      )}
 
       <div className="bg-card rounded-lg border">
         <div className="border-border/70 flex flex-wrap items-center gap-2 border-b px-4 py-3">

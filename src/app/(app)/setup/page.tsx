@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CopyBlock from "@/components/CopyBlock";
@@ -33,6 +34,18 @@ function Step({
 }
 
 export default function SetupPage() {
+  const [teamKey, setTeamKey] = useState("");
+  const [origin, setOrigin] = useState("https://your-server");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    fetch("/api/admin/settings").then(async (res) => {
+      if (res.ok) setTeamKey((await res.json()).settings.teamKey ?? "");
+    });
+  }, []);
+
+  const teamCmd = `curl -sSL ${origin}/install.sh | bash -s -- ${origin} ${teamKey || "<team-key>"}`;
+
   return (
     <>
       <PageHeader
@@ -53,12 +66,10 @@ export default function SetupPage() {
 
         <Step n="1" title="Share the team install command">
           <p>
-            Copy the <b>team install command</b> from the top of the{" "}
-            <Link href="/members" className="text-primary font-medium underline underline-offset-4">
-              Members
-            </Link>{" "}
-            page and drop it in your team chat. It&apos;s the same command for everyone.
+            One command for your whole team — drop it in your team chat. It carries this
+            workspace&apos;s address and key, so it always points people to the right place.
           </p>
+          <CopyBlock text={teamCmd} />
         </Step>
 
         <Step n="2" title="Everyone runs it once">

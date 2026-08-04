@@ -10,7 +10,7 @@ export type HistoryPoint = {
 };
 
 const W = 720;
-const H = 260;
+const H = 230;
 const PAD = { top: 16, right: 16, bottom: 28, left: 40 };
 
 const SERIES = [
@@ -183,7 +183,12 @@ export default function HistoryChart({ points }: { points: HistoryPoint[] }) {
             }}
           >
             <div style={{ color: "var(--muted-foreground)" }}>
-              {new Date(hovered.capturedAt).toLocaleString()}
+              {new Date(hovered.capturedAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
             {SERIES.map((s) => (
               <div key={s.key} className="flex items-center gap-1.5 mt-0.5">
