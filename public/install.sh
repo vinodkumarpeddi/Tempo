@@ -75,7 +75,7 @@ if [ "$(uname)" = "Darwin" ]; then
     <string>/bin/bash</string>
     <string>$CONFIG_DIR/collector.sh</string>
   </array>
-  <key>StartInterval</key><integer>600</integer>
+  <key>StartInterval</key><integer>300</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardErrorPath</key><string>$CONFIG_DIR/collector.log</string>
 </dict>
@@ -83,15 +83,15 @@ if [ "$(uname)" = "Darwin" ]; then
 EOF
   launchctl unload "$PLIST" 2>/dev/null || true
   launchctl load "$PLIST"
-  echo "Installed launchd agent (every 10 min tick; server decides when to report)."
+  echo "Installed launchd agent (every 5 min tick; server decides when to report)."
   echo "NOTE: the first run may show a Keychain prompt for 'Claude Code-credentials' — click 'Always Allow'."
 else
   TMP_CRON=$(mktemp)
   crontab -l 2>/dev/null | grep -v "claude-usage-collector" > "$TMP_CRON" || true
-  echo "*/10 * * * * /bin/bash $CONFIG_DIR/collector.sh # claude-usage-collector" >> "$TMP_CRON"
+  echo "*/5 * * * * /bin/bash $CONFIG_DIR/collector.sh # claude-usage-collector" >> "$TMP_CRON"
   crontab "$TMP_CRON"
   rm -f "$TMP_CRON"
-  echo "Installed crontab entry (every 10 min tick; server decides when to report)."
+  echo "Installed crontab entry (every 5 min tick; server decides when to report)."
 fi
 
 "$CONFIG_DIR/collector.sh" && echo "First report sent." || echo "First run did not report (may be rate-limited); it will retry automatically."

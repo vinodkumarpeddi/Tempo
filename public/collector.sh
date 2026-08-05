@@ -1,5 +1,5 @@
 #!/bin/bash
-# claude-team-usage collector — runs every 10 min via launchd/cron.
+# claude-team-usage collector — runs every 5 min via launchd/cron.
 # Reads the local Claude Code OAuth token, fetches usage percentages from
 # Anthropic, and reports them to the team server. The token never leaves
 # this machine; only utilization numbers are sent.

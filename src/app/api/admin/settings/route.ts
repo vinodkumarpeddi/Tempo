@@ -15,7 +15,7 @@ export async function PUT(req: NextRequest) {
 
   const data: Record<string, number | string | boolean> = {};
   if (Number.isInteger(body.collectIntervalMin))
-    data.collectIntervalMin = Math.min(720, Math.max(10, body.collectIntervalMin));
+    data.collectIntervalMin = Math.min(720, Math.max(5, body.collectIntervalMin));
   const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
   if (
     Array.isArray(body.digestTimes) &&

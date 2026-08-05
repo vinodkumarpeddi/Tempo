@@ -31,6 +31,7 @@ type AdminSettings = {
 };
 
 const INTERVALS = [
+  { value: 5, label: "5 min" },
   { value: 15, label: "15 min" },
   { value: 30, label: "30 min" },
   { value: 60, label: "1 hour" },
@@ -166,7 +167,7 @@ export default function SettingsPage() {
       const saved = (await res.json()).settings as AdminSettings;
       if (Number.isInteger(settings.collectIntervalMin) && saved.collectIntervalMin !== settings.collectIntervalMin) {
         toast.info(`Interval adjusted to ${saved.collectIntervalMin} min`, {
-          description: "Collectors tick every 10 minutes, so 10 is the fastest possible.",
+          description: "Collectors tick every 5 minutes, so 5 is the fastest possible.",
         });
       } else {
         toast.success("Settings saved", { description: "Changes are live for every collector." });
@@ -232,7 +233,7 @@ export default function SettingsPage() {
                 <div className="relative">
                   <Input
                     type="number"
-                    min={10}
+                    min={5}
                     max={720}
                     step={5}
                     value={settings.collectIntervalMin}
@@ -240,7 +241,7 @@ export default function SettingsPage() {
                       setSettings({ ...settings, collectIntervalMin: Number(e.target.value) })
                     }
                     onBlur={(e) => {
-                      const v = Math.min(720, Math.max(10, Number(e.target.value) || 10));
+                      const v = Math.min(720, Math.max(5, Number(e.target.value) || 5));
                       setSettings({ ...settings, collectIntervalMin: v });
                     }}
                     className="w-28 pe-10"
@@ -252,7 +253,7 @@ export default function SettingsPage() {
               )}
             </div>
             <p className="text-muted-foreground -mt-3 text-xs">
-              Any value from 10 to 720 minutes — collectors tick every 10 minutes, so timing
+              Any value from 5 to 720 minutes — collectors tick every 5 minutes, so timing
               rounds to the next tick.
             </p>
           </Card>
