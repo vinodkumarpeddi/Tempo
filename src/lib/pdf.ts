@@ -7,6 +7,7 @@ export type PdfRow = {
   fiveHourResetsAt: Date | null;
   sevenDayPct: number | null;
   sevenDayResetsAt: Date | null;
+  scoped?: { label: string; pct: number }[];
 };
 
 const GREEN = rgb(0.09, 0.64, 0.29);
@@ -99,6 +100,13 @@ export async function buildUsagePdf(
         page.drawText(`resets ${fmtWhen(row.sevenDayResetsAt)}`, {
           x: left + 350, y: y - 8, size: 7.5, font, color: GRAY,
         });
+    }
+    if (row.scoped?.length) {
+      page.drawText(
+        row.scoped.map((l) => `${l.label}: ${l.pct.toFixed(0)}%`).join("   ·   "),
+        { x: left + 170, y: y - 20, size: 8, font, color: GRAY },
+      );
+      y -= 12;
     }
     y -= 36;
   }

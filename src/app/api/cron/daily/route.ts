@@ -4,6 +4,7 @@ import { getSettings, prisma } from "@/lib/db";
 import { isAuthed, isCron } from "@/lib/auth";
 import { Attachment, barCell, emailShell, fmtReset, sendEmail } from "@/lib/email";
 import { buildUsagePdf } from "@/lib/pdf";
+import { scopedLimits, ScopedLimit } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
     include: {
       snapshots: {
         orderBy: { capturedAt: "desc" },
-        take: 1,
+        take: 12,
       },
     },
   });
@@ -87,6 +88,7 @@ export async function GET(req: NextRequest) {
           fiveHourResetsAt: s?.fiveHourResetsAt ?? null,
           sevenDayPct: s?.sevenDayPct ?? null,
           sevenDayResetsAt: s?.sevenDayResetsAt ?? null,
+          scoped: scopedOf(u),
         };
       }),
       { date: today, warn: settings.warnThreshold, critical: settings.criticalThreshold },
@@ -160,6 +162,12 @@ type DigestSettings = {
   criticalThreshold: number;
 };
 
+// Model-scoped caps (e.g. a separate Fable/Opus weekly limit) may be absent
+// from the freshest snapshot; scan back to the most recent one that has them.
+function scopedOf(u: UserWithSnapshot): ScopedLimit[] {
+  return u.snapshots.map((s) => scopedLimits(s.raw)).find((l) => l.length > 0) ?? [];
+}
+
 function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
   const rows = users
     .map((u) => {
@@ -167,9 +175,18 @@ function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
       if (!s) {
         return `<tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;"><b>${u.name}</b></td>
-          <td colspan="2" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;">no data reported yet</td>
+          <td colspan="3" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;">no data reported yet</td>
         </tr>`;
       }
+      const scoped = scopedOf(u);
+      const scopedCell = scoped.length
+        ? scoped
+            .map(
+              (l) => `${barCell(l.pct, settings.warnThreshold, settings.criticalThreshold)}<br/>
+          <span style="font-size:12px;color:#6b7280;">${l.label} &middot; resets ${fmtReset(new Date(l.resetsAt))}</span>`,
+            )
+            .join("<br/>")
+        : `<span style="color:#6b7280;">&mdash;</span>`;
       return `<tr>
         <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;vertical-align:top;"><b>${u.name}</b></td>
         <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">
@@ -180,6 +197,9 @@ function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
           ${barCell(s.sevenDayPct, settings.warnThreshold, settings.criticalThreshold)}<br/>
           <span style="font-size:12px;color:#6b7280;">weekly &middot; resets ${fmtReset(s.sevenDayResetsAt)}</span>
         </td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">
+          ${scopedCell}
+        </td>
       </tr>`;
     })
     .join("");
@@ -189,6 +209,7 @@ function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;">Member</th>
          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;">Session (5h)</th>
          <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;">Weekly</th>
+         <th style="text-align:left;padding:8px 12px;border-bottom:2px solid #d1d5db;">Model caps</th>
        </tr>
        ${rows}
      </table>`;
