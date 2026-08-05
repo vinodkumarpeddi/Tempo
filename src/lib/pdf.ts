@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { toIst } from "./ist";
 
 export type PdfRow = {
   name: string;
@@ -30,7 +31,7 @@ export async function buildUsagePdf(
 
   page.drawText("Claude usage — daily report", { x: left, y, size: 18, font: bold });
   y -= 22;
-  page.drawText(opts.date + " (UTC)", { x: left, y, size: 11, font, color: GRAY });
+  page.drawText(opts.date + " (IST)", { x: left, y, size: 11, font, color: GRAY });
   y -= 34;
 
   const colorFor = (pct: number) =>
@@ -55,7 +56,7 @@ export async function buildUsagePdf(
     });
   };
 
-  const fmtWhen = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
+  const fmtWhen = (d: Date) => toIst(d).toISOString().slice(0, 16).replace("T", " ");
 
   const header = () => {
     page.drawText("Member", { x: left, y, size: 10, font: bold, color: GRAY });

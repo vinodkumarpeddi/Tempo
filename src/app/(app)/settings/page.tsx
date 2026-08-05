@@ -249,7 +249,7 @@ export default function SettingsPage() {
             }
             dimmed={!settings.digestEnabled}
           >
-            <Field label="Send at — exact times, as many as you need (UTC)">
+            <Field label="Send at — exact times, as many as you need (IST)">
               <div className="flex flex-wrap items-center gap-1.5">
                 {times.map((t) => (
                   <span

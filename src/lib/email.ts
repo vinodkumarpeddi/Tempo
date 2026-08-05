@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import { fmtIst } from "./ist";
 
 const from = () => process.env.EMAIL_FROM ?? "Tempo <onboarding@resend.dev>";
 
@@ -77,7 +78,7 @@ export function fmtReset(d: Date) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   const rel = h > 0 ? `${h}h ${m}m` : `${m}m`;
-  return `${rel} (${d.toISOString().slice(0, 16).replace("T", " ")} UTC)`;
+  return `${rel} (${fmtIst(d)})`;
 }
 
 export function barCell(pct: number, warn: number, critical: number) {

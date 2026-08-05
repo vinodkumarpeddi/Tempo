@@ -5,12 +5,14 @@ import { isAuthed, isCron } from "@/lib/auth";
 import { Attachment, barCell, emailShell, fmtReset, sendEmail } from "@/lib/email";
 import { buildUsagePdf } from "@/lib/pdf";
 import { scopedLimits, ScopedLimit } from "@/lib/usage";
+import { IST_OFFSET_MS } from "@/lib/ist";
 
 export const dynamic = "force-dynamic";
 
-// Safe to call hourly (system crontab or Vercel Cron): it only sends at the
-// configured UTC hour and at most once per day. `?force=1` bypasses both
-// checks for testing.
+// Safe to call every few minutes (cron-job.org or Vercel Cron): each
+// configured slot sends at most once per day. Schedule semantics are IST
+// (UTC+5:30, no DST) — days, times, and the sent-log all use the IST
+// calendar. `?force=1` bypasses the checks for testing.
 export async function GET(req: NextRequest) {
   if (!isCron(req) && !(await isAuthed(req)))
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -27,34 +29,35 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const todayUtc = now.toISOString().slice(0, 10);
+  const ist = new Date(now.getTime() + IST_OFFSET_MS);
+  const todayIst = ist.toISOString().slice(0, 10);
   let dueSlot: string | null = null;
   if (!force) {
     const days = settings.digestDays
       .split(",")
       .map((d) => parseInt(d, 10))
       .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
-    if (!days.includes(now.getUTCDay())) {
+    if (!days.includes(ist.getUTCDay())) {
       return NextResponse.json({ sent: false, reason: "not a configured report day" });
     }
     const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
     const times = settings.digestTimes.split(",").filter((t) => timeRe.test(t));
-    const nowMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const nowMinutes = ist.getUTCHours() * 60 + ist.getUTCMinutes();
     let sentToday: string[] = [];
     try {
       const log = JSON.parse(settings.digestSentLog || "[]") as string[];
-      sentToday = log.filter((k) => k.startsWith(todayUtc));
+      sentToday = log.filter((k) => k.startsWith(todayIst));
     } catch {}
     // A slot is due once its time has passed and it hasn't been sent today —
     // so a briefly-down server still catches up on the next cron tick.
     const due = times.find((t) => {
       const [h, m] = t.split(":").map(Number);
-      return nowMinutes >= h * 60 + m && !sentToday.includes(`${todayUtc}#${t}`);
+      return nowMinutes >= h * 60 + m && !sentToday.includes(`${todayIst}#${t}`);
     });
     if (!due) {
       return NextResponse.json({ sent: false, reason: "no report slot due" });
     }
-    dueSlot = `${todayUtc}#${due}`;
+    dueSlot = `${todayIst}#${due}`;
   }
 
   const users = await prisma.user.findMany({
@@ -72,7 +75,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent: false, reason: "no members" });
   }
 
-  const today = now.toISOString().slice(0, 10);
+  const today = todayIst;
 
   let attachments: Attachment[] | undefined;
   let body: string;
@@ -145,7 +148,7 @@ export async function GET(req: NextRequest) {
     try {
       log = JSON.parse(settings.digestSentLog || "[]") as string[];
     } catch {}
-    const nextLog = [...log.filter((k) => k.startsWith(todayUtc)), ...(dueSlot ? [dueSlot] : [])];
+    const nextLog = [...log.filter((k) => k.startsWith(todayIst)), ...(dueSlot ? [dueSlot] : [])];
     await prisma.settings.update({
       where: { id: 1 },
       data: { lastDigestAt: now, digestSentLog: JSON.stringify(nextLog) },
