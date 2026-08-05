@@ -10,6 +10,12 @@ INGEST_KEY="${2:-}"
 }
 SERVER_URL="${SERVER_URL%/}"
 
+case "$SERVER_URL" in
+  https://*) ;;
+  http://localhost*|http://127.0.0.1*) ;;
+  *) echo "refusing to install: SERVER_URL must use https:// (got: $SERVER_URL)" >&2; exit 1 ;;
+esac
+
 MEMBER_EMAIL="${3:-}"
 MEMBER_NAME=""
 
@@ -25,8 +31,8 @@ fi
 if [ -z "$MEMBER_EMAIL" ] && [ -n "$creds" ] && command -v python3 >/dev/null 2>&1; then
   token=$(printf '%s' "$creds" | python3 -c "import sys,json; print(json.load(sys.stdin)['claudeAiOauth']['accessToken'])" 2>/dev/null || true)
   if [ -n "$token" ]; then
-    profile=$(curl -s --max-time 15 \
-      -H "Authorization: Bearer $token" \
+    profile=$(printf 'Authorization: Bearer %s\n' "$token" | curl -s --max-time 15 \
+      -H @- \
       -H "anthropic-beta: oauth-2025-04-20" \
       https://api.anthropic.com/api/oauth/profile || true)
     MEMBER_EMAIL=$(printf '%s' "$profile" | python3 -c "import sys,json; print(json.load(sys.stdin)['account']['email'])" 2>/dev/null || true)

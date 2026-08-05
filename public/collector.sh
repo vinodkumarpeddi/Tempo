@@ -46,8 +46,10 @@ fi
 [ -n "$token" ] || { echo "could not extract accessToken" >&2; exit 1; }
 
 # 3. Fetch usage. On rate-limit or error, just wait for the next tick.
-usage=$(curl -s --max-time 20 \
-  -H "Authorization: Bearer $token" \
+# The Authorization header arrives via stdin (-H @-) so the token never
+# appears in the process list.
+usage=$(printf 'Authorization: Bearer %s\n' "$token" | curl -s --max-time 20 \
+  -H @- \
   -H "anthropic-beta: oauth-2025-04-20" \
   https://api.anthropic.com/api/oauth/usage) || exit 0
 
