@@ -105,25 +105,6 @@ export default function SetupPage() {
           </p>
         </Step>
 
-        <div className="border-border/70 mt-2 border-t pt-8">
-          <h3 className="mb-1.5 text-sm font-medium">Deploying to a server?</h3>
-          <p className="text-muted-foreground mb-3 text-sm">
-            Set the email credentials, then let cron trigger reports (safe to call every few
-            minutes — each configured time sends exactly once):
-          </p>
-          <CopyBlock
-            text={`# .env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_USER=you@gmail.com
-SMTP_PASS=<app password>
-EMAIL_FROM="Brimly <you@gmail.com>"
-APP_URL=https://your-server
-
-# crontab
-*/5 * * * * curl -s "https://your-server/api/cron/daily?secret=$CRON_SECRET"`}
-          />
-        </div>
       </main>
     </>
   );
