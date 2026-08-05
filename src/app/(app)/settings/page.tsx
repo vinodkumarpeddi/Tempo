@@ -6,6 +6,13 @@ import { useRouter } from "next/navigation";
 import { Check, FileText, Plus, Send, Table2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import PageHeader from "@/components/PageHeader";
 import { cn } from "@/lib/cn";
@@ -30,6 +37,8 @@ const INTERVALS = [
   { value: 120, label: "2 hours" },
 ];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 
 function Card({
   title,
@@ -122,6 +131,16 @@ export default function SettingsPage() {
   const setTimes = (next: string[]) =>
     settings &&
     setSettings({ ...settings, digestTimes: [...new Set(next)].sort().join(",") });
+
+  const [newHour, setNewHour] = useState("");
+  const [newMinute, setNewMinute] = useState("");
+  const newTime = newHour && newMinute ? `${newHour}:${newMinute}` : null;
+  const addTime = () => {
+    if (!newTime || times.includes(newTime)) return;
+    setTimes([...times, newTime]);
+    setNewHour("");
+    setNewMinute("");
+  };
 
   const days = (settings?.digestDays ?? "")
     .split(",")
@@ -268,19 +287,42 @@ export default function SettingsPage() {
                   </span>
                 ))}
                 {times.length < 12 && (
-                  <span className="border-border inline-flex items-center gap-1 rounded-lg border border-dashed ps-2">
-                    <Plus className="text-muted-foreground size-3.5" />
-                    <input
-                      type="time"
-                      className="text-muted-foreground focus:text-foreground bg-transparent py-1.5 pe-2 text-[13px] outline-none"
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setTimes([...times, e.target.value]);
-                          e.target.value = "";
-                        }
-                      }}
-                    />
-                  </span>
+                  <div className="ms-1 flex items-center gap-1.5">
+                    <Select value={newHour} onValueChange={setNewHour}>
+                      <SelectTrigger size="sm" aria-label="Hour" className="w-[74px] tabular-nums">
+                        <SelectValue placeholder="hh" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        {HOURS.map((h) => (
+                          <SelectItem key={h} value={h} className="tabular-nums">
+                            {h}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-muted-foreground text-sm font-medium">:</span>
+                    <Select value={newMinute} onValueChange={setNewMinute}>
+                      <SelectTrigger size="sm" aria-label="Minute" className="w-[74px] tabular-nums">
+                        <SelectValue placeholder="mm" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        {MINUTES.map((m) => (
+                          <SelectItem key={m} value={m} className="tabular-nums">
+                            {m}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={addTime}
+                      disabled={!newTime || times.includes(newTime)}
+                    >
+                      <Plus />
+                      Add
+                    </Button>
+                  </div>
                 )}
               </div>
             </Field>
