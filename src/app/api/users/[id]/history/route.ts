@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSettings, prisma } from "@/lib/db";
+import { getSettings, prisma, scopedByUser } from "@/lib/db";
 import { isAuthed } from "@/lib/auth";
-import { scopedLimits } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
@@ -49,14 +48,7 @@ export async function GET(
     }),
   ]);
 
-  const scopedSource = await prisma.snapshot.findMany({
-    where: { userId: id },
-    orderBy: { capturedAt: "desc" },
-    take: 48,
-    select: { raw: true },
-  });
-  const scoped =
-    scopedSource.map((x) => scopedLimits(x.raw)).find((l) => l.length > 0) ?? [];
+  const scoped = (await scopedByUser([id])).get(id) ?? [];
 
   const settings = await getSettings();
 

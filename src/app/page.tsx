@@ -50,7 +50,9 @@ function barColor(pct: number) {
 }
 
 export default async function LandingPage() {
-  const account = await getSessionAccount();
+  // The session lookup only skips the marketing page for signed-in admins, so a
+  // database outage should still leave the public page standing.
+  const account = await getSessionAccount().catch(() => null);
   if (account) redirect("/dashboard");
 
   return (

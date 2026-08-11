@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSettings, prisma } from "@/lib/db";
+import { getSettings, prisma, scopedByUser } from "@/lib/db";
 import { isAuthed } from "@/lib/auth";
-import { scopedLimits } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +21,14 @@ export async function GET(req: NextRequest) {
             sevenDayPct: true,
             sevenDayResetsAt: true,
             capturedAt: true,
-            raw: true,
           },
         },
       },
     }),
     getSettings(),
   ]);
+
+  const scopedFor = await scopedByUser(users.map((u) => u.id));
 
   const staleMs = Math.max(2 * settings.collectIntervalMin, 60) * 60_000;
 
@@ -39,10 +39,7 @@ export async function GET(req: NextRequest) {
     },
     members: users.map((u) => {
       const s = u.snapshots[0] ?? null;
-      // The freshest snapshot may be a partial (e.g. seeded/degraded); fall back
-      // to the most recent one whose raw payload carries scoped model limits.
-      const scoped =
-        u.snapshots.map((x) => scopedLimits(x.raw)).find((l) => l.length > 0) ?? [];
+      const scoped = scopedFor.get(u.id) ?? [];
       return {
         id: u.id,
         name: u.name,

@@ -134,11 +134,18 @@ export default function TeamPage() {
           setUpdatedAt(new Date());
         })
         .catch(() => alive && setError(true));
+    // Collectors report every 5 minutes at best, and a backgrounded tab polling
+    // through the night is pure database egress for a screen nobody is reading.
+    const tick = () => {
+      if (document.visibilityState === "visible") load();
+    };
     load();
-    const t = setInterval(load, 60_000);
+    const t = setInterval(tick, 120_000);
+    document.addEventListener("visibilitychange", tick);
     return () => {
       alive = false;
       clearInterval(t);
+      document.removeEventListener("visibilitychange", tick);
     };
   }, []);
 
@@ -245,7 +252,7 @@ export default function TeamPage() {
           <p className="text-muted-foreground text-xs">
             Updated{" "}
             {updatedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} ·
-            refreshes every minute
+            refreshes every 2 minutes
           </p>
         )}
       </PageHeader>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { getSettings, prisma } from "@/lib/db";
+import { getSettings, prisma, scopedByUser } from "@/lib/db";
 import { isAuthed, isCron } from "@/lib/auth";
 import { Attachment, barCell, emailShell, fmtReset, sendEmail } from "@/lib/email";
 import { buildUsagePdf } from "@/lib/pdf";
-import { scopedLimits, ScopedLimit } from "@/lib/usage";
+import { ScopedLimit } from "@/lib/usage";
 import { IST_OFFSET_MS } from "@/lib/ist";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,14 @@ export async function GET(req: NextRequest) {
     include: {
       snapshots: {
         orderBy: { capturedAt: "desc" },
-        take: 12,
+        take: 1,
+        select: {
+          fiveHourPct: true,
+          fiveHourResetsAt: true,
+          sevenDayPct: true,
+          sevenDayResetsAt: true,
+          capturedAt: true,
+        },
       },
     },
   });
@@ -74,6 +81,8 @@ export async function GET(req: NextRequest) {
   if (users.length === 0) {
     return NextResponse.json({ sent: false, reason: "no members" });
   }
+
+  const scopedFor = await scopedByUser(users.map((u) => u.id));
 
   const today = todayIst;
 
@@ -91,7 +100,7 @@ export async function GET(req: NextRequest) {
           fiveHourResetsAt: s?.fiveHourResetsAt ?? null,
           sevenDayPct: s?.sevenDayPct ?? null,
           sevenDayResetsAt: s?.sevenDayResetsAt ?? null,
-          scoped: scopedOf(u),
+          scoped: scopedFor.get(u.id) ?? [],
         };
       }),
       { date: today, warn: settings.warnThreshold, critical: settings.criticalThreshold },
@@ -101,7 +110,7 @@ export async function GET(req: NextRequest) {
     ];
     body = `<p>Today's team usage report is attached as a PDF.</p>`;
   } else {
-    body = inlineTable(users, settings);
+    body = inlineTable(users, settings, scopedFor);
   }
 
   const staleMs = Math.max(2 * settings.collectIntervalMin, 60) * 60_000;
@@ -158,20 +167,30 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ sent, recipients: recipients.length });
 }
 
-type UserWithSnapshot = Prisma.UserGetPayload<{ include: { snapshots: true } }>;
+type UserWithSnapshot = Prisma.UserGetPayload<{
+  include: {
+    snapshots: {
+      select: {
+        fiveHourPct: true;
+        fiveHourResetsAt: true;
+        sevenDayPct: true;
+        sevenDayResetsAt: true;
+        capturedAt: true;
+      };
+    };
+  };
+}>;
 
 type DigestSettings = {
   warnThreshold: number;
   criticalThreshold: number;
 };
 
-// Model-scoped caps (e.g. a separate Fable/Opus weekly limit) may be absent
-// from the freshest snapshot; scan back to the most recent one that has them.
-function scopedOf(u: UserWithSnapshot): ScopedLimit[] {
-  return u.snapshots.map((s) => scopedLimits(s.raw)).find((l) => l.length > 0) ?? [];
-}
-
-function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
+function inlineTable(
+  users: UserWithSnapshot[],
+  settings: DigestSettings,
+  scopedFor: Map<string, ScopedLimit[]>,
+) {
   const rows = users
     .map((u) => {
       const s = u.snapshots[0];
@@ -181,7 +200,7 @@ function inlineTable(users: UserWithSnapshot[], settings: DigestSettings) {
           <td colspan="3" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#6b7280;">no data reported yet</td>
         </tr>`;
       }
-      const scoped = scopedOf(u);
+      const scoped = scopedFor.get(u.id) ?? [];
       const scopedCell = scoped.length
         ? scoped
             .map(
