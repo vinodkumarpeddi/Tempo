@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Meter, { fmtCountdown, fmtResetDate, statusOf } from "@/components/Meter";
+import Meter, { fmtCountdown, fmtResetDate, isPastReset, statusOf } from "@/components/Meter";
 import PageHeader from "@/components/PageHeader";
 
 type Member = {
@@ -104,6 +104,20 @@ function StatTile({
       </div>
       {hint && <div className="text-muted-foreground mt-2 truncate text-xs">{hint}</div>}
     </div>
+  );
+}
+
+function ResetCell({ iso }: { iso: string }) {
+  const past = isPastReset(iso);
+  return (
+    <>
+      <div className={`text-xs ${past ? "text-muted-foreground" : "font-medium"}`}>
+        {past ? "already reset" : `in ${fmtCountdown(iso)}`}
+      </div>
+      <div className={`text-[13px] tabular-nums ${past ? "text-muted-foreground" : ""}`}>
+        {fmtResetDate(iso)}
+      </div>
+    </>
   );
 }
 
@@ -443,13 +457,11 @@ export default function TeamPage() {
                                 critical={data.thresholds.critical}
                               />
                             </TableCell>
-                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                              in {fmtCountdown(s.fiveHourResetsAt)}
-                              <div>{fmtResetDate(s.fiveHourResetsAt)}</div>
+                            <TableCell className="whitespace-nowrap">
+                              <ResetCell iso={s.fiveHourResetsAt} />
                             </TableCell>
-                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                              in {fmtCountdown(s.sevenDayResetsAt)}
-                              <div>{fmtResetDate(s.sevenDayResetsAt)}</div>
+                            <TableCell className="whitespace-nowrap">
+                              <ResetCell iso={s.sevenDayResetsAt} />
                             </TableCell>
                             <TableCell className="pe-4 text-right">
                               <span className="text-muted-foreground text-xs">
