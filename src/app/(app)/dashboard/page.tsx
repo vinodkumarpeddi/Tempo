@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -26,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -87,14 +87,16 @@ function StatTile({
   label,
   value,
   hint,
+  children,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   hint?: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="bg-card rounded-lg border p-4">
+    <div className="bg-card flex flex-col rounded-lg border p-4">
       <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
         {icon}
         {label}
@@ -103,6 +105,7 @@ function StatTile({
         {value}
       </div>
       {hint && <div className="text-muted-foreground mt-2 truncate text-xs">{hint}</div>}
+      {children && <div className="mt-auto pt-3">{children}</div>}
     </div>
   );
 }
@@ -154,7 +157,7 @@ function ResetsTile({
   critical: number;
 }) {
   return (
-    <div className="bg-card rounded-lg border p-4">
+    <div className="bg-card flex flex-col rounded-lg border p-4">
       <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
         <CalendarClock className="size-3.5" />
         Weekly resets soon
@@ -165,23 +168,18 @@ function ResetsTile({
           <div className="text-muted-foreground mt-2 text-xs">no upcoming resets</div>
         </>
       ) : (
-        <ul className="mt-2.5 divide-y">
+        <ul className="mt-2 divide-y">
           {members.map((m) => {
             const s = m.snapshot!;
             return (
-              <li key={m.id} className="py-1.5 first:pt-0 last:pb-0">
-                <div className="flex items-baseline gap-2 text-sm">
-                  <Link
-                    href={`/member/${m.id}`}
-                    className="min-w-0 truncate font-medium hover:underline"
-                  >
-                    {m.name}
-                  </Link>
-                  <span className="ms-auto shrink-0 font-semibold tabular-nums">
-                    in {fmtCountdown(s.sevenDayResetsAt)}
-                  </span>
-                </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-2.5 text-xs">
+              <li key={m.id} className="flex items-center gap-3 py-2 text-sm last:pb-0">
+                <Link
+                  href={`/member/${m.id}`}
+                  className="min-w-0 flex-1 truncate font-medium hover:underline"
+                >
+                  {m.name}
+                </Link>
+                <div className="text-muted-foreground flex shrink-0 items-center gap-2.5 text-xs">
                   <UsageChip label="weekly" pct={s.sevenDayPct} warn={warn} critical={critical} />
                   {m.scoped.map((sc) => (
                     <UsageChip
@@ -192,10 +190,13 @@ function ResetsTile({
                       critical={critical}
                     />
                   ))}
-                  <span className="ms-auto shrink-0 tabular-nums">
-                    {fmtResetDate(s.sevenDayResetsAt)}
-                  </span>
                 </div>
+                <span className="w-20 shrink-0 text-right font-semibold tabular-nums">
+                  in {fmtCountdown(s.sevenDayResetsAt)}
+                </span>
+                <span className="text-muted-foreground w-[7.5rem] shrink-0 text-right text-xs tabular-nums">
+                  {fmtResetDate(s.sevenDayResetsAt)}
+                </span>
               </li>
             );
           })}
@@ -258,6 +259,7 @@ export default function TeamPage() {
       .filter((m) => m.snapshot)
       .sort((a, b) => a.snapshot!.sevenDayPct - b.snapshot!.sevenDayPct);
     const notReporting = data.members.filter((m) => !m.snapshot);
+    const stale = reporting.filter((m) => m.stale);
     const mostAvailable = reporting[0] ?? null;
     const atRisk = reporting.filter(
       (m) =>
@@ -272,7 +274,14 @@ export default function TeamPage() {
           new Date(b.snapshot!.sevenDayResetsAt).getTime(),
       )
       .slice(0, 3);
-    return { reporting, notReporting, mostAvailable, atRisk, upcomingResets };
+    return {
+      reporting,
+      notReporting,
+      stale,
+      mostAvailable,
+      atRisk,
+      upcomingResets,
+    };
   }, [data]);
 
   const filtered = useMemo(() => {
@@ -360,12 +369,18 @@ export default function TeamPage() {
 
       {data && stats && data.members.length > 0 && (
         <>
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,2fr)]">
             <StatTile
               icon={<Users className="size-3.5" />}
               label="Members"
               value={String(data.members.length)}
-              hint={`${stats.reporting.length} reporting`}
+              hint={[
+                `${stats.reporting.length} reporting`,
+                stats.stale.length ? `${stats.stale.length} stale` : null,
+                stats.notReporting.length ? `${stats.notReporting.length} not reporting` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             />
             <StatTile
               icon={<BatteryCharging className="size-3.5" />}
@@ -376,17 +391,66 @@ export default function TeamPage() {
                   ? `${(100 - stats.mostAvailable.snapshot!.sevenDayPct).toFixed(0)}% of weekly limit left`
                   : "no reports yet"
               }
-            />
+            >
+              {stats.mostAvailable && (
+                <div
+                  className="bg-secondary h-1.5 w-full overflow-hidden rounded-full"
+                  role="meter"
+                  aria-valuenow={Math.round(stats.mostAvailable.snapshot!.sevenDayPct)}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="weekly utilization"
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, stats.mostAvailable.snapshot!.sevenDayPct))}%`,
+                      background:
+                        STATUS_DOT[
+                          statusOf(
+                            stats.mostAvailable.snapshot!.sevenDayPct,
+                            data.thresholds.warn,
+                            data.thresholds.critical,
+                          )
+                        ],
+                    }}
+                  />
+                </div>
+              )}
+            </StatTile>
             <StatTile
               icon={<TriangleAlert className="size-3.5" />}
               label="Near limits"
               value={String(stats.atRisk.length)}
-              hint={
-                stats.atRisk.length
-                  ? stats.atRisk.map((m) => m.name).join(", ")
-                  : "everyone in the clear"
-              }
-            />
+              hint={stats.atRisk.length ? undefined : "everyone in the clear"}
+            >
+              {stats.atRisk.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {stats.atRisk.map((m) => (
+                    <Link
+                      key={m.id}
+                      href={`/member/${m.id}`}
+                      className="border-border inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium hover:underline"
+                    >
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{
+                          background:
+                            STATUS_DOT[
+                              statusOf(
+                                Math.max(m.snapshot!.sevenDayPct, m.snapshot!.fiveHourPct),
+                                data.thresholds.warn,
+                                data.thresholds.critical,
+                              )
+                            ],
+                        }}
+                      />
+                      {m.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </StatTile>
             <ResetsTile
               members={stats.upcomingResets}
               warn={data.thresholds.warn}
