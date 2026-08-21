@@ -205,7 +205,7 @@ function inlineTable(
         ? scoped
             .map(
               (l) => `${barCell(l.pct, settings.warnThreshold, settings.criticalThreshold)}<br/>
-          <span style="font-size:12px;color:#6b7280;">${l.label} &middot; resets ${fmtReset(new Date(l.resetsAt))}</span>`,
+          <span style="font-size:12px;color:#6b7280;">${l.label} &middot; ${l.resetsAt ? `resets ${fmtReset(new Date(l.resetsAt))}` : "not used yet this week"}</span>`,
             )
             .join("<br/>")
         : `<span style="color:#6b7280;">&mdash;</span>`;

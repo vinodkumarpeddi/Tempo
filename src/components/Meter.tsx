@@ -38,6 +38,10 @@ export function fmtCountdown(iso: string) {
   return `${m}m`;
 }
 
+export function isPastReset(iso: string) {
+  return new Date(iso).getTime() <= Date.now();
+}
+
 export function fmtResetDate(iso: string) {
   return new Date(iso).toLocaleString(undefined, {
     weekday: "short",
@@ -58,7 +62,7 @@ export default function Meter({
 }: {
   label?: string;
   pct: number;
-  resetsAt: string;
+  resetsAt: string | null;
   warn: number;
   critical: number;
   compact?: boolean;
@@ -108,11 +112,18 @@ export default function Meter({
       {!compact && (
         <div className="text-muted-foreground mt-1.5 flex items-center gap-1.5 text-xs">
           <CalendarClock className="size-3.5 shrink-0" />
-          <span>
-            resets in <span className="text-foreground font-medium">{fmtCountdown(resetsAt)}</span>
-            {" · "}
-            {fmtResetDate(resetsAt)}
-          </span>
+          {resetsAt === null ? (
+            <span>not used yet this week</span>
+          ) : isPastReset(resetsAt) ? (
+            <span>already reset · {fmtResetDate(resetsAt)}</span>
+          ) : (
+            <span>
+              resets in{" "}
+              <span className="text-foreground font-medium">{fmtCountdown(resetsAt)}</span>
+              {" · "}
+              {fmtResetDate(resetsAt)}
+            </span>
+          )}
         </div>
       )}
     </div>

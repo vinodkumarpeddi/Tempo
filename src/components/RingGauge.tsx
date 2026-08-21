@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarClock } from "lucide-react";
-import { fmtCountdown, fmtResetDate, statusOf } from "@/components/Meter";
+import { fmtCountdown, fmtResetDate, isPastReset, statusOf } from "@/components/Meter";
 
 const FILL = {
   good: "var(--color-emerald-500)",
@@ -26,7 +26,7 @@ export default function RingGauge({
 }: {
   label: string;
   pct: number;
-  resetsAt: string;
+  resetsAt: string | null;
   warn: number;
   critical: number;
 }) {
@@ -66,11 +66,22 @@ export default function RingGauge({
         </div>
         <div className="text-muted-foreground mt-2 flex items-start gap-1.5 text-xs leading-snug">
           <CalendarClock className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            resets in <span className="text-foreground font-medium">{fmtCountdown(resetsAt)}</span>
-            <br />
-            {fmtResetDate(resetsAt)}
-          </span>
+          {resetsAt === null ? (
+            <span>not used yet this week</span>
+          ) : isPastReset(resetsAt) ? (
+            <span>
+              already reset
+              <br />
+              {fmtResetDate(resetsAt)}
+            </span>
+          ) : (
+            <span>
+              resets in{" "}
+              <span className="text-foreground font-medium">{fmtCountdown(resetsAt)}</span>
+              <br />
+              {fmtResetDate(resetsAt)}
+            </span>
+          )}
         </div>
       </div>
     </div>

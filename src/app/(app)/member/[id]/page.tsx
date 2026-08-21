@@ -19,7 +19,7 @@ type HistoryResponse = {
     sevenDayResetsAt: string;
     capturedAt: string;
   } | null;
-  scoped: { label: string; pct: number; resetsAt: string }[];
+  scoped: { label: string; pct: number; resetsAt: string | null }[];
   thresholds: { warn: number; critical: number };
 };
 

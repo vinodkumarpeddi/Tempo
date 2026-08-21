@@ -52,7 +52,7 @@ type Member = {
   } | null;
   spark: number[];
   sparkAt: string[];
-  scoped: { label: string; pct: number; resetsAt: string }[];
+  scoped: { label: string; pct: number; resetsAt: string | null }[];
 };
 
 type TeamResponse = {
@@ -415,7 +415,7 @@ export default function TeamPage() {
                                   {m.scoped.map((sc) => (
                                     <div
                                       key={sc.label}
-                                      title={`${sc.label} weekly · resets ${fmtResetDate(sc.resetsAt)}`}
+                                      title={`${sc.label} weekly · ${sc.resetsAt ? `resets ${fmtResetDate(sc.resetsAt)}` : "not used yet this week"}`}
                                     >
                                       <div className="mb-0.5 flex items-baseline justify-between gap-2">
                                         <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">

@@ -5,19 +5,21 @@ export type ParsedUsage = {
   sevenDayResetsAt: Date;
 };
 
-type WindowShape = { utilization?: number; resets_at?: string };
+type WindowShape = { utilization?: number; resets_at?: string | null };
 type LimitShape = {
   kind?: string;
   group?: string;
   percent?: number;
-  resets_at?: string;
+  resets_at?: string | null;
   scope?: { model?: { display_name?: string | null } | null } | null;
 };
 
-export type ScopedLimit = { label: string; pct: number; resetsAt: string };
+export type ScopedLimit = { label: string; pct: number; resetsAt: string | null };
 
 // Model-scoped weekly limits (e.g. a separate Fable/Opus cap) live only in the
 // `limits` array of the raw payload; surface them from the stored raw JSON.
+// An entitled-but-unused cap arrives as percent 0 with resets_at null — keep
+// it, otherwise "has Fable, unused" is indistinguishable from "no Fable plan".
 export function scopedLimits(rawJson: string): ScopedLimit[] {
   try {
     const raw = JSON.parse(rawJson) as { limits?: LimitShape[] };
@@ -27,13 +29,12 @@ export function scopedLimits(rawJson: string): ScopedLimit[] {
         (l) =>
           l?.kind === "weekly_scoped" &&
           typeof l.percent === "number" &&
-          typeof l.resets_at === "string" &&
           l.scope?.model?.display_name,
       )
       .map((l) => ({
         label: l.scope!.model!.display_name as string,
         pct: l.percent as number,
-        resetsAt: l.resets_at as string,
+        resetsAt: typeof l.resets_at === "string" ? l.resets_at : null,
       }));
   } catch {
     return [];
