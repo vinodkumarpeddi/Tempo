@@ -121,6 +121,90 @@ function ResetCell({ iso }: { iso: string }) {
   );
 }
 
+function UsageChip({
+  label,
+  pct,
+  warn,
+  critical,
+}: {
+  label: string;
+  pct: number;
+  warn: number;
+  critical: number;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+      <span
+        className="size-1.5 shrink-0 rounded-full"
+        style={{ background: STATUS_DOT[statusOf(pct, warn, critical)] }}
+      />
+      <span className="text-foreground font-medium tabular-nums">{pct.toFixed(0)}%</span>
+      {label}
+    </span>
+  );
+}
+
+function ResetsTile({
+  members,
+  warn,
+  critical,
+}: {
+  members: Member[];
+  warn: number;
+  critical: number;
+}) {
+  return (
+    <div className="bg-card rounded-lg border p-4">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
+        <CalendarClock className="size-3.5" />
+        Weekly resets soon
+      </div>
+      {members.length === 0 ? (
+        <>
+          <div className="mt-2.5 text-[26px] leading-none font-semibold tracking-tight">—</div>
+          <div className="text-muted-foreground mt-2 text-xs">no upcoming resets</div>
+        </>
+      ) : (
+        <ul className="mt-2.5 divide-y">
+          {members.map((m) => {
+            const s = m.snapshot!;
+            return (
+              <li key={m.id} className="py-1.5 first:pt-0 last:pb-0">
+                <div className="flex items-baseline gap-2 text-sm">
+                  <Link
+                    href={`/member/${m.id}`}
+                    className="min-w-0 truncate font-medium hover:underline"
+                  >
+                    {m.name}
+                  </Link>
+                  <span className="ms-auto shrink-0 font-semibold tabular-nums">
+                    in {fmtCountdown(s.sevenDayResetsAt)}
+                  </span>
+                </div>
+                <div className="text-muted-foreground mt-0.5 flex items-center gap-2.5 text-xs">
+                  <UsageChip label="weekly" pct={s.sevenDayPct} warn={warn} critical={critical} />
+                  {m.scoped.map((sc) => (
+                    <UsageChip
+                      key={sc.label}
+                      label={sc.label}
+                      pct={sc.pct}
+                      warn={warn}
+                      critical={critical}
+                    />
+                  ))}
+                  <span className="ms-auto shrink-0 tabular-nums">
+                    {fmtResetDate(s.sevenDayResetsAt)}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function TeamPage() {
   const router = useRouter();
   const [data, setData] = useState<TeamResponse | null>(null);
@@ -180,14 +264,15 @@ export default function TeamPage() {
         m.snapshot!.sevenDayPct >= data.thresholds.warn ||
         m.snapshot!.fiveHourPct >= data.thresholds.warn,
     );
-    const nextReset = reporting.length
-      ? reporting.reduce((min, m) =>
-          new Date(m.snapshot!.sevenDayResetsAt) < new Date(min.snapshot!.sevenDayResetsAt)
-            ? m
-            : min,
-        )
-      : null;
-    return { reporting, notReporting, mostAvailable, atRisk, nextReset };
+    const upcomingResets = reporting
+      .filter((m) => !isPastReset(m.snapshot!.sevenDayResetsAt))
+      .sort(
+        (a, b) =>
+          new Date(a.snapshot!.sevenDayResetsAt).getTime() -
+          new Date(b.snapshot!.sevenDayResetsAt).getTime(),
+      )
+      .slice(0, 3);
+    return { reporting, notReporting, mostAvailable, atRisk, upcomingResets };
   }, [data]);
 
   const filtered = useMemo(() => {
@@ -302,17 +387,10 @@ export default function TeamPage() {
                   : "everyone in the clear"
               }
             />
-            <StatTile
-              icon={<CalendarClock className="size-3.5" />}
-              label="Next weekly reset"
-              value={
-                stats.nextReset ? fmtCountdown(stats.nextReset.snapshot!.sevenDayResetsAt) : "—"
-              }
-              hint={
-                stats.nextReset
-                  ? `${stats.nextReset.name} · ${fmtResetDate(stats.nextReset.snapshot!.sevenDayResetsAt)}`
-                  : undefined
-              }
+            <ResetsTile
+              members={stats.upcomingResets}
+              warn={data.thresholds.warn}
+              critical={data.thresholds.critical}
             />
           </div>
 
