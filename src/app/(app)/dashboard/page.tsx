@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { MonogramAvatar } from "@/components/ui/monogram-avatar";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -260,6 +259,9 @@ export default function TeamPage() {
       .sort((a, b) => a.snapshot!.sevenDayPct - b.snapshot!.sevenDayPct);
     const notReporting = data.members.filter((m) => !m.snapshot);
     const stale = reporting.filter((m) => m.stale);
+    const scopedLabels = Array.from(
+      new Set(data.members.flatMap((m) => m.scoped.map((sc) => sc.label))),
+    );
     const mostAvailable = reporting[0] ?? null;
     const atRisk = reporting.filter(
       (m) =>
@@ -278,6 +280,7 @@ export default function TeamPage() {
       reporting,
       notReporting,
       stale,
+      scopedLabels,
       mostAvailable,
       atRisk,
       upcomingResets,
@@ -589,7 +592,11 @@ export default function TeamPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {stats.scopedLabels.length
+                                    ? `no ${stats.scopedLabels.join("/")} plan`
+                                    : "—"}
+                                </span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -650,12 +657,12 @@ export default function TeamPage() {
                     <Link
                       key={m.id}
                       href={`/member/${m.id}`}
-                      className="group bg-card hover:border-ring/40 rounded-xl border p-5 transition-colors hover:shadow-sm"
+                      className="group bg-card hover:border-ring/40 flex flex-col rounded-xl border transition-colors hover:shadow-sm"
                     >
-                      <div className="mb-4 flex items-center gap-3">
-                        <MonogramAvatar name={m.name} className="size-10 text-sm" />
+                      <div className="flex items-center gap-3 border-b px-5 py-4">
+                        <MonogramAvatar name={m.name} className="size-9 text-sm" />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{m.name}</div>
+                          <div className="truncate text-sm font-medium">{m.name}</div>
                           <div className="text-muted-foreground truncate text-xs">{m.email}</div>
                         </div>
                         <HeadroomPill
@@ -665,7 +672,7 @@ export default function TeamPage() {
                         />
                         <ChevronRight className="text-muted-foreground/50 group-hover:text-muted-foreground size-4 shrink-0 transition-colors" />
                       </div>
-                      <div className="space-y-4">
+                      <div className="flex-1 space-y-4 px-5 py-4">
                         <Meter
                           label="Session · 5 hour"
                           pct={s.fiveHourPct}
@@ -673,7 +680,6 @@ export default function TeamPage() {
                           warn={data.thresholds.warn}
                           critical={data.thresholds.critical}
                         />
-                        <Separator />
                         <Meter
                           label="Weekly"
                           pct={s.sevenDayPct}
@@ -681,18 +687,40 @@ export default function TeamPage() {
                           warn={data.thresholds.warn}
                           critical={data.thresholds.critical}
                         />
-                        {m.scoped.map((sc) => (
-                          <div key={sc.label}>
-                            <Separator className="mb-4" />
+                        {stats.scopedLabels.map((label) => {
+                          const sc = m.scoped.find((x) => x.label === label);
+                          return sc ? (
                             <Meter
-                              label={`Weekly · ${sc.label}`}
+                              key={label}
+                              label={`Weekly · ${label}`}
                               pct={sc.pct}
                               resetsAt={sc.resetsAt}
                               warn={data.thresholds.warn}
                               critical={data.thresholds.critical}
                             />
-                          </div>
-                        ))}
+                          ) : (
+                            <div key={label} className="flex items-baseline justify-between gap-2">
+                              <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+                                Weekly · {label}
+                              </span>
+                              <span className="text-muted-foreground text-xs">not on plan</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="text-muted-foreground flex items-center justify-between border-t px-5 py-2.5 text-xs">
+                        <span>
+                          last report{" "}
+                          {new Date(s.capturedAt).toLocaleTimeString(undefined, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {m.stale && (
+                          <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                            stale
+                          </Badge>
+                        )}
                       </div>
                     </Link>
                   );
